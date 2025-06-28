@@ -85,7 +85,7 @@ const Register = () => {
         password,
         role,
       };
-      if (role === 'apiadmin') {
+      if (role === 'student') {
         payload.sectionId = selectedSection; 
       }
 
