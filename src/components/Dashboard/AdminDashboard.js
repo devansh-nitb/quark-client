@@ -46,7 +46,7 @@ const AdminDashboard = () => {
   const [newSubjectCourseSingle, setNewSubjectCourseSingle] = useState(''); // Subject's Course (was Course's Subject)
   const [openAddSectionModal, setOpenAddSectionModal] = useState(false);
   const [newSectionName, setNewSectionName] = useState('');
-  const [newSectionStudents, setNewSectionStudents] = []; // Initialize as array
+  const [newSectionStudents, setNewSectionStudents] = useState([]); // Initialize as array
 
   // State for Bulk User Upload (CSV)
   const [openBulkUploadModal, setOpenBulkUploadModal] = useState(false);
