@@ -65,7 +65,7 @@ const AdminDashboard = () => {
   const fetchUsers = async () => {
     setLoadingUsers(true);
     try {
-      const response = await fetch('http://localhost:5000/api/auth/users/all', {
+      const response = await fetch('https://quark-server-4py2.onrender.com/api/auth/users/all', {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
@@ -85,7 +85,7 @@ const AdminDashboard = () => {
   const fetchLogs = async () => {
     setLoadingLogs(true);
     try {
-      const response = await fetch('http://localhost:5000/api/admin/logs', {
+      const response = await fetch('https://quark-server-4py2.onrender.com/api/admin/logs', {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
@@ -107,10 +107,10 @@ const AdminDashboard = () => {
     setAcademicDataError('');
     try {
       const [deptsRes, subjectsRes, coursesRes, sectionsRes] = await Promise.all([
-        fetch('http://localhost:5000/api/misc/departments', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('http://localhost:5000/api/misc/subjects', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('http://localhost:5000/api/misc/courses', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('http://localhost:5000/api/misc/sections', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('https://quark-server-4py2.onrender.com/api/misc/departments', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('https://quark-server-4py2.onrender.com/api/misc/subjects', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('https://quark-server-4py2.onrender.com/api/misc/courses', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('https://quark-server-4py2.onrender.com/api/misc/sections', { headers: { Authorization: `Bearer ${token}` } }),
       ]);
 
       const deptsData = await deptsRes.json();
@@ -157,7 +157,7 @@ const AdminDashboard = () => {
     if (!selectedUser || !newRole) return;
 
     try {
-      const response = await fetch('http://localhost:5000/api/admin/assign-role', {
+      const response = await fetch('https://quark-server-4py2.onrender.com/api/admin/assign-role', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -191,7 +191,7 @@ const AdminDashboard = () => {
 
   const handleAddAcademicData = async (type, data) => {
     try {
-      const response = await fetch('http://localhost:5000/api/admin/manage-academic-data', {
+      const response = await fetch('https://quark-server-4py2.onrender.com/api/admin/manage-academic-data', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -366,7 +366,7 @@ const handleBulkUploadSubmit = async () => {
   setBulkUploadError('');
 
   try {
-    const response = await fetch('http://localhost:5000/api/auth/users/bulk-register', {
+    const response = await fetch('https://quark-server-4py2.onrender.com/api/auth/users/bulk-register', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

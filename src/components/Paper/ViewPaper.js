@@ -50,7 +50,7 @@ const ViewPaper = () => {
     setViewModalError('');
     setDownloadModalError('');
     try {
-      const response = await fetch(`http://localhost:5000/api/papers/view/${paperId}`, {
+      const response = await fetch(`https://quark-server-4py2.onrender.com/api/papers/view/${paperId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -160,7 +160,7 @@ const ViewPaper = () => {
     setRequestOTPLoading(true);
     setDownloadModalError('');
     try {
-        const response = await fetch('http://localhost:5000/api/auth/request-otp', {
+        const response = await fetch('https://quark-server-4py2.onrender.com/api/auth/request-otp', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -205,7 +205,7 @@ const ViewPaper = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:5000/api/papers/download/${paperId}`, {
+      const response = await fetch(`https://quark-server-4py2.onrender.com/api/papers/download/${paperId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

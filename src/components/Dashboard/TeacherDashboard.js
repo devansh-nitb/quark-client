@@ -42,7 +42,7 @@ const TeacherDashboard = () => {
     const fetchPapers = async () => {
       setLoading(true);
       try {
-        const response = await fetch('http://localhost:5000/api/papers/list', {
+        const response = await fetch('https://quark-server-4py2.onrender.com/api/papers/list', {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await response.json();
@@ -93,7 +93,7 @@ const TeacherDashboard = () => {
 
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:5000/api/papers/${paperToDelete._id}`, {
+      const response = await fetch(`https://quark-server-4py2.onrender.com/api/papers/${paperToDelete._id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -133,7 +133,7 @@ const TeacherDashboard = () => {
     setRequestOTPLoading(true);
     setDownloadModalError('');
     try {
-        const response = await fetch('http://localhost:5000/api/auth/request-otp', {
+        const response = await fetch('https://quark-server-4py2.onrender.com/api/auth/request-otp', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -176,7 +176,7 @@ const TeacherDashboard = () => {
     setDownloadModalError('');
 
     try {
-      const response = await fetch(`http://localhost:5000/api/papers/download/${currentPaperForDownload._id}`, {
+      const response = await fetch(`https://quark-server-4py2.onrender.com/api/papers/download/${currentPaperForDownload._id}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -48,7 +48,7 @@ const UploadPaper = () => {
         const headers = { Authorization: `Bearer ${token}` };
 
         //console.log('Fetching subjects...');
-        const subjectsResponse = await fetch('http://localhost:5000/api/misc/subjects', { headers });
+        const subjectsResponse = await fetch('https://quark-server-4py2.onrender.com/api/misc/subjects', { headers });
         const subjectsData = await subjectsResponse.json();
         if (subjectsResponse.ok) {
           setSubjects(subjectsData);
@@ -60,7 +60,7 @@ const UploadPaper = () => {
 
 
         //console.log('Fetching users...');
-        const usersResponse = await fetch('http://localhost:5000/api/auth/users/all', { headers });
+        const usersResponse = await fetch('https://quark-server-4py2.onrender.com/api/auth/users/all', { headers });
         const usersData = await usersResponse.json();
         if (usersResponse.ok) {
           setStudents(usersData.filter(u => u.role === 'student')); 
@@ -71,7 +71,7 @@ const UploadPaper = () => {
         }
 
         //console.log('Fetching sections...');
-        const sectionsResponse = await fetch('http://localhost:5000/api/misc/sections', { headers });
+        const sectionsResponse = await fetch('https://quark-server-4py2.onrender.com/api/misc/sections', { headers });
         const sectionsData = await sectionsResponse.json();
         if (sectionsResponse.ok) {
           setSections(sectionsData);
@@ -105,7 +105,7 @@ const UploadPaper = () => {
       const fetchCourses = async () => {
         try {
           //console.log(`Fetching courses for subject ID: ${subjectId}...`);
-          const response = await fetch(`http://localhost:5000/api/misc/courses/${subjectId}`, {
+          const response = await fetch(`https://quark-server-4py2.onrender.com/api/misc/courses/${subjectId}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           const data = await response.json();
@@ -180,7 +180,7 @@ const UploadPaper = () => {
 
     try {
       //console.log('Sending paper upload request...');
-      const response = await fetch('http://localhost:5000/api/papers/upload', {
+      const response = await fetch('https://quark-server-4py2.onrender.com/api/papers/upload', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
