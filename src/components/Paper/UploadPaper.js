@@ -1,6 +1,3 @@
-// frontend/src/components/Paper/UploadPaper.js
-// Component for teachers/admins to upload question papers, now with student/section selection.
-
 import React, { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 import {
@@ -8,11 +5,11 @@ import {
   FormControl, InputLabel, Select, MenuItem, Chip
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { useTheme } from '@mui/material/styles'; // Import useTheme for theme access
+import { useTheme } from '@mui/material/styles'; 
 
 const UploadPaper = () => {
-  const theme = useTheme(); // Access the current theme
-  console.log('UploadPaper: Component function executed.');
+  const theme = useTheme(); 
+  //console.log('Component function executed.');
 
   const { token, user } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -25,9 +22,9 @@ const UploadPaper = () => {
   const [validTo, setValidTo] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [contentBase64, setContentBase64] = useState('');
-  const [accessToIds, setAccessToIds] = useState([]); // Array of user/section IDs for access
-  const [paperPassword, setPaperPassword] = useState(''); // New state for paper password
-  const [confirmPaperPassword, setConfirmPaperPassword] = useState(''); // New state for paper password confirmation
+  const [accessToIds, setAccessToIds] = useState([]); 
+  const [paperPassword, setPaperPassword] = useState(''); 
+  const [confirmPaperPassword, setConfirmPaperPassword] = useState(''); 
 
   const [loading, setLoading] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -36,93 +33,91 @@ const UploadPaper = () => {
 
   const [subjects, setSubjects] = useState([]);
   const [courses, setCourses] = useState([]);
-  const [students, setStudents] = useState([]); // List of only student users
-  const [sections, setSections] = useState([]); // List of all sections
+  const [students, setStudents] = useState([]); 
+  const [sections, setSections] = useState([]); 
   const [loadingMetadata, setLoadingMetadata] = useState(true);
   const [metadataError, setMetadataError] = useState('');
 
   useEffect(() => {
-    console.log('UploadPaper: useEffect for initial metadata fetch triggered. Token:', token);
+    //console.log('useEffect for initial metadata fetch triggered. Token:', token);
     const fetchMetadata = async () => {
-      console.log('UploadPaper: fetchMetadata started.');
+      //console.log('fetchMetadata started.');
       setLoadingMetadata(true);
-      setMetadataError(''); // Clear previous errors
+      setMetadataError(''); 
       try {
         const headers = { Authorization: `Bearer ${token}` };
 
-        // Fetch Subjects
-        console.log('UploadPaper: Fetching subjects...');
-        const subjectsResponse = await fetch('https://quark-server-4py2.onrender.com/api/misc/subjects', { headers });
+        //console.log('Fetching subjects...');
+        const subjectsResponse = await fetch('http://localhost:5000/api/misc/subjects', { headers });
         const subjectsData = await subjectsResponse.json();
         if (subjectsResponse.ok) {
           setSubjects(subjectsData);
-          console.log('UploadPaper: Subjects fetched successfully, count:', subjectsData.length);
+          //console.log('Subjects fetched successfully, count:', subjectsData.length);
         } else {
-          console.error('UploadPaper: Failed to fetch subjects:', subjectsData.message || 'Unknown error');
+          console.error('Failed to fetch subjects:', subjectsData.message || 'Unknown error');
           setMetadataError(prev => prev + `Failed to load subjects: ${subjectsData.message || 'Unknown error'}. `);
         }
 
-        // Fetch all users and filter for students
-        console.log('UploadPaper: Fetching users...');
-        const usersResponse = await fetch('https://quark-server-4py2.onrender.com/api/auth/users/all', { headers });
+
+        //console.log('Fetching users...');
+        const usersResponse = await fetch('http://localhost:5000/api/auth/users/all', { headers });
         const usersData = await usersResponse.json();
         if (usersResponse.ok) {
-          setStudents(usersData.filter(u => u.role === 'student')); // Filter to only get students
-          console.log('UploadPaper: Students fetched successfully, count:', usersData.filter(u => u.role === 'student').length);
+          setStudents(usersData.filter(u => u.role === 'student')); 
+          //console.log('Students fetched successfully, count:', usersData.filter(u => u.role === 'student').length);
         } else {
-          console.error('UploadPaper: Failed to fetch users:', usersData.message || 'Unknown error');
+          console.error('Failed to fetch users:', usersData.message || 'Unknown error');
           setMetadataError(prev => prev + `Failed to load users: ${usersData.message || 'Unknown error'}. `);
         }
 
-        // Fetch Sections
-        console.log('UploadPaper: Fetching sections...');
-        const sectionsResponse = await fetch('https://quark-server-4py2.onrender.com/api/misc/sections', { headers });
+        //console.log('Fetching sections...');
+        const sectionsResponse = await fetch('http://localhost:5000/api/misc/sections', { headers });
         const sectionsData = await sectionsResponse.json();
         if (sectionsResponse.ok) {
           setSections(sectionsData);
-          console.log('UploadPaper: Sections fetched successfully, count:', sectionsData.length);
+          //console.log('Sections fetched successfully, count:', sectionsData.length);
         } else {
-          console.error('UploadPaper: Failed to fetch sections:', sectionsData.message || 'Unknown error');
+          console.error('Failed to fetch sections:', sectionsData.message || 'Unknown error');
           setMetadataError(prev => prev + `Failed to load sections: ${sectionsData.message || 'Unknown error'}. `);
         }
 
       } catch (err) {
-        console.error('UploadPaper: Network/parsing error during initial metadata fetch:', err);
+        console.error('Network/parsing error during initial metadata fetch:', err);
         setMetadataError(prev => prev + `Network error fetching academic data: ${err.message}. `);
       } finally {
         setLoadingMetadata(false);
-        console.log('UploadPaper: fetchMetadata finished, loadingMetadata set to false.');
+        //console.log('fetchMetadata finished, loadingMetadata set to false.');
       }
     };
 
     if (token) {
       fetchMetadata();
     } else {
-      console.log('UploadPaper: No authentication token found, skipping metadata fetch.');
+      //console.log('No authentication token found, skipping metadata fetch.');
       setLoadingMetadata(false);
       setMetadataError('Authentication token missing. Please log in again.');
     }
   }, [token]);
 
   useEffect(() => {
-    console.log('UploadPaper: useEffect for courses triggered. Subject ID:', subjectId);
+    //console.log('useEffect for courses triggered. Subject ID:', subjectId);
     if (subjectId) {
       const fetchCourses = async () => {
         try {
-          console.log(`UploadPaper: Fetching courses for subject ID: ${subjectId}...`);
-          const response = await fetch(`https://quark-server-4py2.onrender.com/api/misc/courses/${subjectId}`, {
+          //console.log(`Fetching courses for subject ID: ${subjectId}...`);
+          const response = await fetch(`http://localhost:5000/api/misc/courses/${subjectId}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           const data = await response.json();
           if (response.ok) {
             setCourses(data);
-            console.log('UploadPaper: Courses fetched successfully, count:', data.length);
+            //console.log('Courses fetched successfully, count:', data.length);
           } else {
-            console.error('UploadPaper: Failed to fetch courses:', data.message || 'Unknown error');
+            console.error('Failed to fetch courses:', data.message || 'Unknown error');
             setMetadataError(prev => prev + `Failed to load courses for selected subject: ${data.message || 'Unknown error'}. `);
           }
         } catch (err) {
-          console.error('UploadPaper: Network/parsing error fetching courses:', err);
+          console.error('Network/parsing error fetching courses:', err);
           setMetadataError(prev => prev + `Network error fetching courses: ${err.message}. `);
         }
       };
@@ -130,7 +125,7 @@ const UploadPaper = () => {
     } else {
       setCourses([]);
       setCourseId('');
-      console.log('UploadPaper: No subject selected, clearing courses.');
+      //console.log('No subject selected, clearing courses.');
     }
   }, [subjectId, token]);
 
@@ -140,16 +135,15 @@ const UploadPaper = () => {
       setSelectedFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        // Remove the data URI prefix (e.g., "data:application/pdf;base64,")
         const base64Content = reader.result.split(',')[1];
         setContentBase64(base64Content);
-        console.log('UploadPaper: File read as Base64.');
+        //console.log('File read as Base64.');
       };
       reader.readAsDataURL(file);
     } else {
       setSelectedFile(null);
       setContentBase64('');
-      console.log('UploadPaper: No file selected or file cleared.');
+      //console.log('No file selected or file cleared.');
     }
   };
 
@@ -157,18 +151,17 @@ const UploadPaper = () => {
     e.preventDefault();
     setLoading(true);
     setSnackbarOpen(false);
-    console.log('UploadPaper: Form submission started.');
+    //console.log('Form submission started.');
 
     if (!contentBase64) {
       setSnackbarMessage('Please select a file to upload.');
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
       setLoading(false);
-      console.log('UploadPaper: No file selected for upload.');
+      //console.log('No file selected for upload.');
       return;
     }
 
-    // New: Validate paper passwords if provided
     if (paperPassword && paperPassword !== confirmPaperPassword) {
         setSnackbarMessage('Paper password and confirmation do not match.');
         setSnackbarSeverity('error');
@@ -176,8 +169,7 @@ const UploadPaper = () => {
         setLoading(false);
         return;
     }
-    // If a paper password is provided, ensure it meets some basic length requirements (e.g., > 0)
-    if (paperPassword && paperPassword.length < 4) { // Example: minimum 4 characters for paper password
+    if (paperPassword && paperPassword.length < 4) { 
         setSnackbarMessage('Paper password must be at least 4 characters long.');
         setSnackbarSeverity('error');
         setSnackbarOpen(true);
@@ -187,8 +179,8 @@ const UploadPaper = () => {
 
 
     try {
-      console.log('UploadPaper: Sending paper upload request...');
-      const response = await fetch('https://quark-server-4py2.onrender.com/api/papers/upload', {
+      //console.log('Sending paper upload request...');
+      const response = await fetch('http://localhost:5000/api/papers/upload', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -202,19 +194,18 @@ const UploadPaper = () => {
           validFrom,
           validTo,
           contentBase64,
-          accessToIds, // Send the combined array of student/section IDs
-          paperPassword: paperPassword || undefined, // Only send if not empty
+          accessToIds,
+          paperPassword: paperPassword || undefined,
         }),
       });
 
       const data = await response.json();
-      console.log('UploadPaper: Paper upload response received:', data);
+      //console.log('Paper upload response received:', data);
 
       if (response.ok) {
         setSnackbarMessage('Paper uploaded and encrypted successfully!');
         setSnackbarSeverity('success');
         setSnackbarOpen(true);
-        // Clear form fields
         setTitle('');
         setSubjectId('');
         setSemester('');
@@ -222,27 +213,27 @@ const UploadPaper = () => {
         setValidFrom('');
         setValidTo('');
         setSelectedFile(null);
-        setContentBase64(''); // Corrected from contentBase66
-        setAccessToIds([]); // Clear selection
-        setPaperPassword(''); // Clear paper password
-        setConfirmPaperPassword(''); // Clear confirmation
-        console.log('UploadPaper: Paper uploaded successfully, form cleared.');
+        setContentBase64(''); 
+        setAccessToIds([]); 
+        setPaperPassword(''); 
+        setConfirmPaperPassword('');
+        //console.log('Paper uploaded successfully,.');
         if (user.role === 'teacher') navigate('/teacher-dashboard');
         else if (user.role === 'admin') navigate('/admin-dashboard');
       } else {
         setSnackbarMessage(data.message || 'Failed to upload paper.');
         setSnackbarSeverity('error');
         setSnackbarOpen(true);
-        console.error('UploadPaper: Paper upload failed:', data.message);
+        console.error('Paper upload failed:', data.message);
       }
     } catch (err) {
-      console.error('UploadPaper: Network error during paper upload:', err);
+      console.error('Network error during paper upload:', err);
       setSnackbarMessage('Network error. Please try again later.');
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
     } finally {
       setLoading(false);
-      console.log('UploadPaper: Form submission finished, loading set to false.');
+      //console.log('Form submission finished, loading set to false.');
     }
   };
 
@@ -253,7 +244,6 @@ const UploadPaper = () => {
     setSnackbarOpen(false);
   };
 
-  // Helper function to get display name for selected user/section IDs
   const getDisplayValue = (selectedIds) => {
     if (!selectedIds || selectedIds.length === 0) return '';
     return selectedIds.map(id => {
@@ -261,14 +251,12 @@ const UploadPaper = () => {
       const section = sections.find(sec => sec._id === id);
       if (student) return `Student: ${student.username}`;
       if (section) return `Section: ${section.name}`;
-      return id; // Fallback if ID not found
+      return id; 
     }).join(', ');
   };
 
-
-  // Render loading state
   if (loadingMetadata) {
-    console.log('UploadPaper: Rendering loading state.');
+    //console.log('Rendering loading state.');
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
         <CircularProgress color="primary" />
@@ -277,9 +265,8 @@ const UploadPaper = () => {
     );
   }
 
-  // Render error state if metadata loading failed
   if (metadataError) {
-    console.error('UploadPaper: Rendering error state. Error:', metadataError);
+    console.error('Rendering error state. Error:', metadataError);
     return (
       <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '80vh' }}>
         <Alert severity="error" sx={{ width: '100%', maxWidth: 600, mb: 2 }}>
@@ -290,9 +277,7 @@ const UploadPaper = () => {
       </Box>
     );
   }
-
-  // If not loading and no errors, render the main form
-  console.log('UploadPaper: Rendering main form.');
+  //console.log('check main form.');
   return (
     <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
       <Paper elevation={6} sx={{ p: 4, borderRadius: 3, width: '100%', maxWidth: 600 }}>
@@ -360,7 +345,7 @@ const UploadPaper = () => {
             onChange={(e) => setSemester(e.target.value)}
             required
             variant="outlined"
-            placeholder="e.g., Fall 2023 - CS101"
+            placeholder="e.g., Sem 1 2023 - CS101"
             sx={{ mb: 2 }}
           />
 
@@ -412,7 +397,7 @@ const UploadPaper = () => {
                 value={confirmPaperPassword}
                 onChange={(e) => setConfirmPaperPassword(e.target.value)}
                 variant="outlined"
-                disabled={!paperPassword} // Disable if no primary password is set
+                disabled={!paperPassword} 
                 helperText={paperPassword && confirmPaperPassword && paperPassword !== confirmPaperPassword ? "Passwords do not match" : ""}
                 error={paperPassword && confirmPaperPassword && paperPassword !== confirmPaperPassword}
                 sx={{ mb: 2 }}
@@ -470,9 +455,9 @@ const UploadPaper = () => {
                 ))
               )}
             </Select>
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+            {/* <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
               Leave empty for access by all students within the time window.
-            </Typography>
+            </Typography> */}
           </FormControl>
 
 
@@ -480,7 +465,7 @@ const UploadPaper = () => {
             <InputLabel shrink htmlFor="paper-file-upload">Question Paper File (PDF/DOCX)</InputLabel>
             <input
               type="file"
-              accept=".pdf,.doc,.docx"
+              accept=".pdf"
               onChange={handleFileChange}
               required
               id="paper-file-upload" // Link label to input
@@ -501,7 +486,7 @@ const UploadPaper = () => {
             sx={{
               mt: 3,
               py: 1.5,
-              fontWeight: theme.typography.button.fontWeight, // Ensure button text is visible
+              fontWeight: theme.typography.button.fontWeight,
               fontSize: theme.typography.button.fontSize,
             }}
             disabled={loading || !selectedFile || (paperPassword && paperPassword !== confirmPaperPassword)}

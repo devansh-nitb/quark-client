@@ -1,13 +1,13 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 import { Box, Typography, Paper, Grid, Button, CircularProgress, Alert, Card, CardContent, CardActions, useTheme, Chip,
-         Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar // Added Dialog components for custom modals
+         Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import SchoolIcon from '@mui/icons-material/School'; // Example icon for exams
-import BookIcon from '@mui/icons-material/Book'; // Icon for subjects
-import DownloadIcon from '@mui/icons-material/Download'; // Import download icon
+import SchoolIcon from '@mui/icons-material/School';
+import BookIcon from '@mui/icons-material/Book';
+import DownloadIcon from '@mui/icons-material/Download';
 
 const StudentDashboard = () => {
   const { user, token } = useContext(AuthContext);
@@ -15,23 +15,21 @@ const StudentDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const theme = useTheme(); // Access the theme for consistent styling
+  const theme = useTheme();
 
-  // State for View Paper password modal
   const [openViewPaperPasswordModal, setOpenViewPaperPasswordModal] = useState(false);
   const [currentPaperForView, setCurrentPaperForView] = useState(null);
   const [viewPaperPasswordInput, setViewPaperPasswordInput] = useState('');
   const [viewPasswordModalError, setViewPasswordModalError] = useState('');
 
-  // State for Download Paper password modal
   const [openDownloadPaperModal, setOpenDownloadPaperModal] = useState(false);
   const [currentPaperForDownload, setCurrentPaperForDownload] = useState(null);
-  const [downloadLoginPassword, setDownloadLoginPassword] = useState('');
+  const [downloadOTP, setDownloadOTP] = useState('');
   const [downloadPaperSpecificPassword, setDownloadPaperSpecificPassword] = useState('');
   const [downloadModalError, setDownloadModalError] = useState('');
   const [downloadLoading, setDownloadLoading] = useState(false);
+  const [requestOTPLoading, setRequestOTPLoading] = useState(false);
 
-  // Snackbar for general feedback
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
@@ -41,19 +39,16 @@ const StudentDashboard = () => {
     const fetchAvailablePapers = async () => {
       setLoading(true);
       try {
-        const response = await fetch('https://quark-server-4py2.onrender.com/api/papers/list', {
+        const response = await fetch('http://localhost:5000/api/papers/list', {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await response.json();
         if (response.ok) {
-          // The backend list API should already filter for student's access.
-          // Frontend simply displays what's returned.
           setAvailablePapers(data);
         } else {
           setError(data.message || 'Failed to fetch available papers.');
         }
       } catch (err) {
-        console.error('Error fetching available papers:', err);
         setError('Network error fetching papers.');
       } finally {
         setLoading(false);
@@ -69,10 +64,9 @@ const StudentDashboard = () => {
     setCurrentPaperForView(paper);
     if (paper.requiresPassword) {
       setOpenViewPaperPasswordModal(true);
-      setViewPaperPasswordInput(''); // Clear previous input
-      setViewPasswordModalError(''); // Clear previous error
+      setViewPaperPasswordInput('');
+      setViewPasswordModalError('');
     } else {
-      // If no password is required, navigate directly
       navigate(`/view-paper/${paper._id}`);
     }
   };
@@ -82,22 +76,55 @@ const StudentDashboard = () => {
       setViewPasswordModalError('Please enter the paper password.');
       return;
     }
-    // Navigate to ViewPaper, passing the password in state
     navigate(`/view-paper/${currentPaperForView._id}`, { state: { paperPassword: viewPaperPasswordInput } });
-    setOpenViewPaperPasswordModal(false); // Close the modal
+    setOpenViewPaperPasswordModal(false);
   };
 
   const handleOpenDownloadPaperModal = (paper) => {
     setCurrentPaperForDownload(paper);
-    setDownloadLoginPassword('');
+    setDownloadOTP('');
     setDownloadPaperSpecificPassword('');
     setDownloadModalError('');
+    setRequestOTPLoading(false);
     setOpenDownloadPaperModal(true);
   };
 
+  const handleRequestOTP = async () => {
+    setRequestOTPLoading(true);
+    setDownloadModalError('');
+    try {
+        const response = await fetch('http://localhost:5000/api/auth/request-otp', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ email: user.email }),
+        });
+        const data = await response.json();
+        if (response.ok) {
+            setSnackbarMessage('OTP sent to your registered email!');
+            setSnackbarSeverity('success');
+            setSnackbarOpen(true);
+        } else {
+            setDownloadModalError(data.message || 'Failed to request OTP.');
+            setSnackbarMessage(data.message || 'Failed to request OTP.');
+            setSnackbarSeverity('error');
+            setSnackbarOpen(true);
+        }
+    } catch (err) {
+        setDownloadModalError('Network error while requesting OTP.');
+        setSnackbarMessage('Network error while requesting OTP.');
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
+    } finally {
+        setRequestOTPLoading(false);
+    }
+  };
+
   const handleConfirmDownloadPaper = async () => {
-    if (!currentPaperForDownload || !downloadLoginPassword) {
-      setDownloadModalError('Please enter your login password.');
+    if (!currentPaperForDownload || !downloadOTP) {
+      setDownloadModalError('Please enter the OTP.');
       return;
     }
     if (currentPaperForDownload.requiresPassword && !downloadPaperSpecificPassword) {
@@ -106,25 +133,25 @@ const StudentDashboard = () => {
     }
 
     setDownloadLoading(true);
-    setDownloadModalError(''); // Clear previous errors
+    setDownloadModalError('');
 
     try {
-      const response = await fetch(`https://quark-server-4py2.onrender.com/api/papers/download/${currentPaperForDownload._id}`, {
+      const response = await fetch(`http://localhost:5000/api/papers/download/${currentPaperForDownload._id}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          password: downloadLoginPassword, // User's login password
-          paperPassword: currentPaperForDownload.requiresPassword ? downloadPaperSpecificPassword : undefined // Paper's specific password (if required)
+          otp: downloadOTP,
+          paperPassword: currentPaperForDownload.requiresPassword ? downloadPaperSpecificPassword : undefined
         }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        const watermarkedPdfBase64 = data.content; // This is the data URI string
+        const watermarkedPdfBase64 = data.content;
         const filename = `${currentPaperForDownload.title.replace(/\s/g, '_')}_Watermarked_${user?.username || 'user'}.pdf`;
 
         const link = document.createElement('a');
@@ -137,7 +164,7 @@ const StudentDashboard = () => {
         setSnackbarMessage('Paper downloaded successfully with your user ID watermark!');
         setSnackbarSeverity('success');
         setSnackbarOpen(true);
-        setOpenDownloadPaperModal(false); // Close modal
+        setOpenDownloadPaperModal(false);
       } else {
         setDownloadModalError(data.message || 'Download failed.');
         setSnackbarMessage(data.message || 'Download failed.');
@@ -145,7 +172,6 @@ const StudentDashboard = () => {
         setSnackbarOpen(true);
       }
     } catch (err) {
-      console.error('Error during paper download:', err);
       setDownloadModalError('Network error during download.');
       setSnackbarMessage('Network error during download.');
       setSnackbarSeverity('error');
@@ -230,7 +256,7 @@ const StudentDashboard = () => {
                       variant="contained"
                       color="secondary"
                       startIcon={<VisibilityIcon />}
-                      onClick={() => handleViewPaper(paper)} // Pass entire paper object
+                      onClick={() => handleViewPaper(paper)}
                       sx={{ borderRadius: 2 }}
                     >
                       View Paper
@@ -240,7 +266,7 @@ const StudentDashboard = () => {
                         variant="outlined"
                         color="primary"
                         startIcon={<DownloadIcon />}
-                        onClick={() => handleOpenDownloadPaperModal(paper)} // Pass entire paper object
+                        onClick={() => handleOpenDownloadPaperModal(paper)}
                         sx={{ borderRadius: 2, ml: 1 }}
                     >
                         Download
@@ -253,7 +279,6 @@ const StudentDashboard = () => {
         )}
       </Paper>
 
-      {/* View Paper Password Dialog */}
       <Dialog open={openViewPaperPasswordModal} onClose={() => setOpenViewPaperPasswordModal(false)}>
         <DialogTitle>Enter Paper Password</DialogTitle>
         <DialogContent>
@@ -284,24 +309,34 @@ const StudentDashboard = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Download Paper Password Dialog */}
       <Dialog open={openDownloadPaperModal} onClose={() => setOpenDownloadPaperModal(false)}>
         <DialogTitle>Download "{currentPaperForDownload?.title}"</DialogTitle>
         <DialogContent>
           <Typography variant="body2" sx={{ mb: 2 }}>
-            To download, please enter your login password and the paper's password (if required).
+            To download, please enter the OTP sent to your registered email and the paper's password (if required).
           </Typography>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Your Login Password"
-            type="password"
-            fullWidth
-            variant="outlined"
-            value={downloadLoginPassword}
-            onChange={(e) => setDownloadLoginPassword(e.target.value)}
-            sx={{ mb: 2 }}
-          />
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
+            <TextField
+              autoFocus
+              margin="dense"
+              label="OTP"
+              type="text"
+              fullWidth
+              variant="outlined"
+              value={downloadOTP}
+              onChange={(e) => setDownloadOTP(e.target.value)}
+              error={!!downloadModalError && downloadModalError.includes('OTP')}
+              helperText={downloadModalError && downloadModalError.includes('OTP') ? downloadModalError : ''}
+            />
+            <Button
+              variant="outlined"
+              onClick={handleRequestOTP}
+              disabled={requestOTPLoading}
+              sx={{ flexShrink: 0, height: 'fit-content' }}
+            >
+              {requestOTPLoading ? <CircularProgress size={24} color="inherit" /> : 'Request OTP'}
+            </Button>
+          </Box>
           {currentPaperForDownload?.requiresPassword && (
             <TextField
               margin="dense"
@@ -311,9 +346,11 @@ const StudentDashboard = () => {
               variant="outlined"
               value={downloadPaperSpecificPassword}
               onChange={(e) => setDownloadPaperSpecificPassword(e.target.value)}
+              error={!!downloadModalError && downloadModalError.includes('paper-specific password')}
+              helperText={downloadModalError && downloadModalError.includes('paper-specific password') ? downloadModalError : ''}
             />
           )}
-          {downloadModalError && (
+          {downloadModalError && !downloadModalError.includes('OTP') && !downloadModalError.includes('paper-specific password') && (
             <Alert severity="error" sx={{ mt: 2 }}>{downloadModalError}</Alert>
           )}
         </DialogContent>
@@ -322,7 +359,7 @@ const StudentDashboard = () => {
           <Button
             onClick={handleConfirmDownloadPaper}
             variant="contained"
-            disabled={downloadLoading || !downloadLoginPassword || (currentPaperForDownload?.requiresPassword && !downloadPaperSpecificPassword)}
+            disabled={downloadLoading || !downloadOTP || (currentPaperForDownload?.requiresPassword && !downloadPaperSpecificPassword)}
           >
             {downloadLoading ? <CircularProgress size={24} color="inherit" /> : 'Confirm & Download'}
           </Button>

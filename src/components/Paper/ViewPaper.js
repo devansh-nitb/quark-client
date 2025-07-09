@@ -1,8 +1,5 @@
-// frontend/src/components/Paper/ViewPaper.js
-// Component for viewing decrypted question papers with a dynamic watermark and download functionality.
-
-import React, { useState, useEffect, useContext, useMemo } from 'react'; // Import useMemo
-import { useParams, useNavigate, useLocation } from 'react-router-dom'; // Import useLocation
+import React, { useState, useEffect, useContext, useMemo } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import {
   Box, Typography, Paper, CircularProgress, Alert, Button, IconButton,
@@ -11,106 +8,83 @@ import {
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
 import ZoomOutIcon from '@mui/icons-material/ZoomOut';
 import DownloadIcon from '@mui/icons-material/Download';
-
-// Import react-pdf components and worker
 import { Document, Page, pdfjs } from 'react-pdf';
-import 'react-pdf/dist/esm/Page/AnnotationLayer.css'; // Essential for annotations like links in PDF
-import 'react-pdf/dist/esm/Page/TextLayer.css'; // Essential for selectable text in PDF
+import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
+import 'react-pdf/dist/esm/Page/TextLayer.css';
 
-// Set up the worker source for pdf.js. This is crucial for react-pdf to work.
-// It now attempts a more robust path.
-// You MUST copy 'pdf.worker.min.js' from 'node_modules/pdfjs-dist/build/' to 'frontend/public/'
-pdfjs.GlobalWorkerOptions.workerSrc = `${window.location.origin}/pdf.worker.min.js`; // More robust path
-
+pdfjs.GlobalWorkerOptions.workerSrc = `${window.location.origin}/pdf.worker.min.js`;
 
 const ViewPaper = () => {
-  const { paperId } = useParams(); // Get paper ID from URL
+  const { paperId } = useParams();
   const navigate = useNavigate();
-  const location = useLocation(); // Hook to access location object
+  const location = useLocation();
   const { token, user } = useContext(AuthContext);
 
   const [paperTitle, setPaperTitle] = useState('');
-  const [paperContent, setPaperContent] = useState(null); // base64 string
+  const [paperContent, setPaperContent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [numPages, setNumPages] = useState(null); // State to store total number of pages in the PDF
-  const [scale, setScale] = useState(1.0); // State for PDF zoom level
+  const [numPages, setNumPages] = useState(null);
+  const [scale, setScale] = useState(1.0);
 
-  // State for view paper password modal
   const [openViewPasswordModal, setOpenViewPasswordModal] = useState(false);
-  const [currentPaperForView, setCurrentPaperForView] = useState(null); // To store paper details for modal
   const [viewPaperPassword, setViewPaperPassword] = useState('');
   const [viewModalError, setViewModalError] = useState('');
 
-  // State for download functionality
   const [openDownloadDialog, setOpenDownloadDialog] = useState(false);
-  const [downloadLoginPassword, setDownloadLoginPassword] = useState(''); // User's login password
-  const [downloadPaperSpecificPassword, setDownloadPaperSpecificPassword] = useState(''); // Re-added for paper-specific password
+  const [downloadOTP, setDownloadOTP] = useState('');
+  const [downloadPaperSpecificPassword, setDownloadPaperSpecificPassword] = useState('');
   const [downloadLoading, setDownloadLoading] = useState(false);
+  const [requestOTPLoading, setRequestOTPLoading] = useState(false);
   const [downloadModalError, setDownloadModalError] = useState('');
 
-  // Snackbar for general feedback
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
 
-  // Store full paper details from the first successful fetch to use in download modal
   const [fullPaperDetails, setFullPaperDetails] = useState(null);
 
-  // Log the worker source path to help diagnose loading issues
-  console.log('PDF.js Worker Source (set in code):', pdfjs.GlobalWorkerOptions.workerSrc);
-
-  // Function to fetch paper content, now accepts a paperPassword parameter
   const fetchPaper = async (attemptPaperPassword = null) => {
     setLoading(true);
     setError('');
-    setViewModalError(''); // Clear any previous modal errors
-    setDownloadModalError(''); // Clear download modal error here as well
+    setViewModalError('');
+    setDownloadModalError('');
     try {
-      console.log(`ViewPaper: Attempting to fetch paper ${paperId}`);
-      const response = await fetch(`https://quark-server-4py2.onrender.com/api/papers/view/${paperId}`, {
-        method: 'POST', // Backend expects POST for view
+      const response = await fetch(`http://localhost:5000/api/papers/view/${paperId}`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ paperPassword: attemptPaperPassword }), // Send the password
+        body: JSON.stringify({ paperPassword: attemptPaperPassword }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        console.log('ViewPaper: Paper fetched and decrypted successfully.');
         setPaperTitle(data.title);
         setPaperContent(data.content);
-        setFullPaperDetails(data); // Store full details for download modal
-        setOpenViewPasswordModal(false); // Close password modal on success
+        setFullPaperDetails(data);
+        setOpenViewPasswordModal(false);
       } else {
-        console.error('ViewPaper: Failed to fetch paper:', data.message || 'Unknown error');
         setError(data.message || 'Failed to retrieve paper. It might be corrupted or unauthorized.');
-        // If the error is due to a missing/incorrect password, open the modal
         if (response.status === 401 && (data.message?.includes('password') || data.message?.includes('requires'))) {
-            // Store paper details for the modal to know if it's password protected
-            // This is crucial if we landed here without fullPaperDetails already set
-            setFullPaperDetails(prev => ({ ...prev, requiresPassword: true })); // Ensure flag is set for modal logic
+            setFullPaperDetails(prev => ({ ...prev, requiresPassword: true }));
             setOpenViewPasswordModal(true);
             setViewModalError(data.message);
         } else {
-            // For other errors, just show a snackbar/alert and don't open modal
             setSnackbarMessage(data.message || 'Failed to retrieve paper.');
             setSnackbarSeverity('error');
             setSnackbarOpen(true);
         }
       }
     } catch (err) {
-      console.error('ViewPaper: Network error fetching paper:', err);
       setError('Network error while fetching paper. Please try again later.');
       setSnackbarMessage('Network error. Please try again later.');
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
     } finally {
       setLoading(false);
-      console.log('ViewPaper: Paper fetch finished.');
     }
   };
 
@@ -123,21 +97,15 @@ const ViewPaper = () => {
       return;
     }
 
-    // Check if pdf.worker.min.js is properly set.
     if (!pdfjs.GlobalWorkerOptions.workerSrc) {
-        console.warn('PDF.js worker source is NOT set. Ensure "pdf.worker.min.js" is copied to your "public" directory and the path is correct.');
         setError('PDF viewer not initialized. Please ensure PDF.js worker file is correctly deployed.');
         setLoading(false);
-        return; // Stop execution if worker is not configured
+        return;
     }
 
-    // Check if paper password was passed via navigation state (from dashboard)
     const passwordFromState = location.state?.paperPassword;
-    console.log('ViewPaper: passwordFromState:', passwordFromState ? 'present' : 'absent');
-
     fetchPaper(passwordFromState);
 
-    // Clean up navigation state after use to avoid issues if navigating back/forth
     if (location.state?.paperPassword) {
       const stateCopy = { ...location.state };
       delete stateCopy.paperPassword;
@@ -151,59 +119,85 @@ const ViewPaper = () => {
 
   }, [paperId, token, user, navigate, location.state]);
 
-
-  // Callback function when the PDF document is successfully loaded by react-pdf
   const onDocumentLoadSuccess = ({ numPages: nextNumPages }) => {
     setNumPages(nextNumPages);
-    console.log(`PDF loaded successfully with ${nextNumPages} pages.`);
   };
 
-  // Handlers for zoom functionality
   const handleZoomIn = () => {
-    setScale(prevScale => Math.min(prevScale + 0.1, 2.0)); // Max zoom 2.0
+    setScale(prevScale => Math.min(prevScale + 0.1, 2.0));
   };
 
   const handleZoomOut = () => {
-    setScale(prevScale => Math.max(prevScale - 0.1, 0.5)); // Min zoom 0.5
+    setScale(prevScale => Math.max(prevScale - 0.1, 0.5));
   };
 
-  // Handler for submitting password in the ViewPaper's internal modal
   const handleConfirmViewPassword = () => {
     if (!viewPaperPassword) {
       setViewModalError('Password is required to view this paper.');
       return;
     }
-    fetchPaper(viewPaperPassword); // Retry fetch with the entered password
-    // The modal will be closed by fetchPaper on success
+    fetchPaper(viewPaperPassword);
   };
 
-  // Handlers for download dialog
   const handleOpenDownloadDialog = () => {
     setOpenDownloadDialog(true);
-    setDownloadLoginPassword(''); // Clear login password field on open
-    setDownloadPaperSpecificPassword(''); // Clear paper password field on open
-    setDownloadModalError(''); // Clear previous errors
-    setSnackbarOpen(false); // Close any existing snackbars
+    setDownloadOTP('');
+    setDownloadPaperSpecificPassword('');
+    setDownloadModalError('');
+    setSnackbarOpen(false);
   };
 
   const handleCloseDownloadDialog = () => {
     setOpenDownloadDialog(false);
-    setDownloadLoginPassword('');
+    setDownloadOTP('');
     setDownloadPaperSpecificPassword('');
     setDownloadLoading(false);
+    setRequestOTPLoading(false);
     setDownloadModalError('');
+  };
+
+  const handleRequestOTP = async () => {
+    setRequestOTPLoading(true);
+    setDownloadModalError('');
+    try {
+        const response = await fetch('http://localhost:5000/api/auth/request-otp', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ email: user.email }),
+        });
+        const data = await response.json();
+        if (response.ok) {
+            setSnackbarMessage('OTP sent to your registered email!');
+            setSnackbarSeverity('success');
+            setSnackbarOpen(true);
+        } else {
+            setDownloadModalError(data.message || 'Failed to request OTP.');
+            setSnackbarMessage(data.message || 'Failed to request OTP.');
+            setSnackbarSeverity('error');
+            setSnackbarOpen(true);
+        }
+    } catch (err) {
+        setDownloadModalError('Network error while requesting OTP.');
+        setSnackbarMessage('Network error while requesting OTP.');
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
+    } finally {
+        setRequestOTPLoading(false);
+    }
   };
 
   const handleDownloadConfirm = async () => {
     setDownloadLoading(true);
-    setDownloadModalError(''); // Clear previous errors
+    setDownloadModalError('');
 
-    if (!downloadLoginPassword) {
-      setDownloadModalError('Your login password is required.');
+    if (!downloadOTP) {
+      setDownloadModalError('OTP is required.');
       setDownloadLoading(false);
       return;
     }
-    // Conditionally check for paper-specific password for download
     if (fullPaperDetails?.requiresPassword && !downloadPaperSpecificPassword) {
         setDownloadModalError('This paper requires a paper-specific password for download.');
         setDownloadLoading(false);
@@ -211,16 +205,14 @@ const ViewPaper = () => {
     }
 
     try {
-      console.log(`ViewPaper: Attempting to download paper ${paperId} with login password.`);
-      const response = await fetch(`https://quark-server-4py2.onrender.com/api/papers/download/${paperId}`, {
+      const response = await fetch(`http://localhost:5000/api/papers/download/${paperId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-            password: downloadLoginPassword, // User's login password
-            // Conditionally send paperPassword if required by the paper
+            otp: downloadOTP,
             paperPassword: fullPaperDetails?.requiresPassword ? downloadPaperSpecificPassword : undefined
         }),
       });
@@ -228,11 +220,9 @@ const ViewPaper = () => {
       const data = await response.json();
 
       if (response.ok) {
-        // Backend should send the watermarked PDF content as base64 data URI
         const watermarkedPdfBase64 = data.content;
         const filename = `${paperTitle.replace(/\s/g, '_')}_Watermarked_${user?.username || 'user'}.pdf`;
 
-        // Create a temporary link element to trigger download
         const link = document.createElement('a');
         link.href = watermarkedPdfBase64;
         link.download = filename;
@@ -243,17 +233,14 @@ const ViewPaper = () => {
         setSnackbarMessage('Paper downloaded successfully with your user ID watermark!');
         setSnackbarSeverity('success');
         setSnackbarOpen(true);
-        console.log('ViewPaper: Paper download initiated.');
-        handleCloseDownloadDialog(); // Close dialog after successful download
+        handleCloseDownloadDialog();
       } else {
         setDownloadModalError(data.message || 'Download failed. Please check credentials.');
         setSnackbarMessage(data.message || 'Download failed.');
         setSnackbarSeverity('error');
         setSnackbarOpen(true);
-        console.error('ViewPaper: Download failed:', data.message);
       }
     } catch (err) {
-      console.error('ViewPaper: Network error during download:', err);
       setDownloadModalError('Network error during download. Please try again later.');
       setSnackbarMessage('Network error during download.');
       setSnackbarSeverity('error');
@@ -270,7 +257,6 @@ const ViewPaper = () => {
     setSnackbarOpen(false);
   };
 
-  // Memoize the options object for the <Document /> component
   const documentOptions = useMemo(() => ({
     workerSrc: pdfjs.GlobalWorkerOptions.workerSrc,
   }), [pdfjs.GlobalWorkerOptions.workerSrc]);
@@ -285,7 +271,7 @@ const ViewPaper = () => {
     );
   }
 
-  if (error && !openViewPasswordModal) { // Renamed from openViewPaperPasswordModal
+  if (error && !openViewPasswordModal) {
     return (
       <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '80vh' }}>
         <Alert severity="error" sx={{ width: '100%', maxWidth: 600, mb: 2 }}>
@@ -296,7 +282,6 @@ const ViewPaper = () => {
     );
   }
 
-  // Generate watermark text dynamically
   const watermarkText = fullPaperDetails?.watermarkInfo
     ? `${fullPaperDetails.watermarkInfo.studentName} (${fullPaperDetails.watermarkInfo.studentId})\n${new Date(fullPaperDetails.watermarkInfo.timestamp).toLocaleString()}`
     : `User: ${user?.username || 'N/A'} (ID: ${user?._id || 'N/A'})\nTime: ${new Date().toLocaleString()}`;
@@ -307,7 +292,7 @@ const ViewPaper = () => {
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        height: 'calc(100vh - 64px - (2 * 24px))', // Adjust height based on AppBar and padding
+        height: 'calc(100vh - 64px - (2 * 24px))',
         p: 2,
         boxSizing: 'border-box',
       }}
@@ -316,7 +301,6 @@ const ViewPaper = () => {
         {paperTitle || 'View Question Paper'}
       </Typography>
 
-      {/* Controls: Back button, Zoom controls, and Download button */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Button variant="outlined" onClick={() => navigate(-1)}>
           Back to Dashboard
@@ -331,16 +315,16 @@ const ViewPaper = () => {
           <IconButton onClick={handleZoomIn} disabled={scale >= 2.0}>
             <ZoomInIcon />
           </IconButton>
-          {/* <Button
+          <Button
             variant="contained"
             color="primary"
             startIcon={<DownloadIcon />}
             sx={{ ml: 2 }}
             onClick={handleOpenDownloadDialog}
-            disabled={!paperContent} // Disable if no paper content is loaded
+            disabled={!paperContent}
           >
             Download
-          </Button> */}
+          </Button>
         </Box>
       </Box>
 
@@ -356,7 +340,6 @@ const ViewPaper = () => {
           overflow: 'hidden',
         }}
       >
-        {/* Watermark Overlay - Non-blocking for interactions */}
         <Box
           sx={{
             position: 'absolute',
@@ -397,7 +380,6 @@ const ViewPaper = () => {
           </Typography>
         </Box>
 
-        {/* PDF Content Display Area using react-pdf */}
         {paperContent ? (
             <Box
             sx={{
@@ -417,7 +399,7 @@ const ViewPaper = () => {
                     alignItems: 'center',
                 },
                 '& .react-pdf__Page': {
-                    marginBottom: '10px', // Spacing between pages
+                    marginBottom: '10px',
                     boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
                     '& canvas': {
                         width: '100% !important',
@@ -430,15 +412,13 @@ const ViewPaper = () => {
                 file={paperContent}
                 onLoadSuccess={onDocumentLoadSuccess}
                 onLoadError={(e) => {
-                    console.error('Error loading document:', e);
                     setError('Failed to load PDF document. It might be corrupted or malformed.');
                     setSnackbarMessage('Failed to load PDF. Please check the file.');
                     setSnackbarSeverity('error');
                     setSnackbarOpen(true);
                 }}
-                options={documentOptions} // Use memoized options here
+                options={documentOptions}
                 >
-                {/* Render all pages */}
                 {Array.from({ length: numPages }, (_, i) => (
                     <Page
                         key={`page_${i + 1}`}
@@ -457,7 +437,6 @@ const ViewPaper = () => {
         )}
       </Paper>
 
-      {/* View Paper Password Confirmation Dialog */}
       <Dialog open={openViewPasswordModal} onClose={() => setOpenViewPasswordModal(false)}>
         <DialogTitle>Enter Paper Password</DialogTitle>
         <DialogContent>
@@ -490,28 +469,37 @@ const ViewPaper = () => {
         </DialogActions>
       </Dialog>
 
-
-      {/* Download Password Confirmation Dialog */}
       <Dialog open={openDownloadDialog} onClose={handleCloseDownloadDialog}>
         <DialogTitle>Confirm Download</DialogTitle>
         <DialogContent>
           <Typography variant="body2" sx={{ mb: 2 }}>
-            Please enter your login password to confirm the download of this question paper.
+            Please enter the OTP sent to your registered email to confirm the download of this question paper.
             {fullPaperDetails?.requiresPassword && " You will also need to enter the paper's specific password."}
             The downloaded PDF will include a watermark with your user ID for security.
           </Typography>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Your Login Password"
-            type="password"
-            fullWidth
-            variant="outlined"
-            value={downloadLoginPassword}
-            onChange={(e) => setDownloadLoginPassword(e.target.value)}
-            sx={{ mb: 2 }}
-          />
-          {/* Conditionally render Paper Specific Password field */}
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
+            <TextField
+              autoFocus
+              margin="dense"
+              label="OTP"
+              type="text"
+              fullWidth
+              variant="outlined"
+              value={downloadOTP}
+              onChange={(e) => setDownloadOTP(e.target.value)}
+              error={!!downloadModalError && downloadModalError.includes('OTP')}
+              helperText={downloadModalError && downloadModalError.includes('OTP') ? downloadModalError : ''}
+            />
+            <Button
+              variant="outlined"
+              onClick={handleRequestOTP}
+              disabled={requestOTPLoading}
+              sx={{ flexShrink: 0, height: 'fit-content' }}
+            >
+              {requestOTPLoading ? <CircularProgress size={24} color="inherit" /> : 'Request OTP'}
+            </Button>
+          </Box>
+
           {fullPaperDetails?.requiresPassword && (
             <TextField
               margin="dense"
@@ -521,9 +509,11 @@ const ViewPaper = () => {
               variant="outlined"
               value={downloadPaperSpecificPassword}
               onChange={(e) => setDownloadPaperSpecificPassword(e.target.value)}
+              error={!!downloadModalError && downloadModalError.includes('paper-specific password')}
+              helperText={downloadModalError && downloadModalError.includes('paper-specific password') ? downloadModalError : ''}
             />
           )}
-          {downloadModalError && (
+          {downloadModalError && !downloadModalError.includes('OTP') && !downloadModalError.includes('paper-specific password') && (
             <Alert severity="error" sx={{ mt: 2 }}>{downloadModalError}</Alert>
           )}
         </DialogContent>
@@ -531,8 +521,7 @@ const ViewPaper = () => {
           <Button onClick={handleCloseDownloadDialog} disabled={downloadLoading}>Cancel</Button>
           <Button
             onClick={handleDownloadConfirm}
-            // Update disabled condition: If paper requires password, both fields must be filled
-            disabled={downloadLoading || !downloadLoginPassword || (fullPaperDetails?.requiresPassword && !downloadPaperSpecificPassword)}
+            disabled={downloadLoading || !downloadOTP || (fullPaperDetails?.requiresPassword && !downloadPaperSpecificPassword)}
             variant="contained"
           >
             {downloadLoading ? <CircularProgress size={24} color="inherit" /> : 'Confirm & Download'}
@@ -540,7 +529,6 @@ const ViewPaper = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Snackbar for feedback */}
       <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={handleCloseSnackbar}>
         <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity} sx={{ width: '100%' }}>
           {snackbarMessage}

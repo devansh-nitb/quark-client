@@ -24,7 +24,6 @@ const AdminDashboard = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [newRole, setNewRole] = useState('');
 
-  // State for Academic Data Management (keeping original backend terminology for state variables)
   const [departments, setDepartments] = useState([]);
   const [subjects, setSubjects] = useState([]); // This holds backend 'Subject' data, will be displayed as 'Courses'
   const [courses, setCourses] = useState([]); // This holds backend 'Course' data, will be displayed as 'Subjects (with Course Code)'
@@ -32,23 +31,19 @@ const AdminDashboard = () => {
   const [loadingAcademicData, setLoadingAcademicData] = useState(true);
   const [academicDataError, setAcademicDataError] = useState('');
 
-  // Modals for adding academic data
   const [openAddDeptModal, setOpenAddDeptModal] = useState(false);
   const [newDeptName, setNewDeptName] = useState('');
-  // For 'Add New Course' (was 'Add New Subject')
   const [openAddCourseSingleModal, setOpenAddCourseSingleModal] = useState(false); // Renamed to avoid confusion
   const [newCourseNameSingle, setNewCourseNameSingle] = useState(''); // New Course Name (was Subject Name)
   const [newCourseDeptSingle, setNewCourseDeptSingle] = useState(''); // Course's Department (was Subject's Department)
-  // For 'Add New Subject (with Course Code)' (was 'Add New Course')
   const [openAddSubjectSingleModal, setOpenAddSubjectSingleModal] = useState(false); // Renamed to avoid confusion
-  const [selectedDepartmentForSubjectSingle, setSelectedDepartmentForSubjectSingle] = useState(''); // New state for chained dropdown
+  const [selectedDepartmentForSubjectSingle, setSelectedDepartmentForSubjectSingle] = useState('');
   const [newSubjectCodeSingle, setNewSubjectCodeSingle] = useState(''); // New Subject Code (was Course Name)
   const [newSubjectCourseSingle, setNewSubjectCourseSingle] = useState(''); // Subject's Course (was Course's Subject)
   const [openAddSectionModal, setOpenAddSectionModal] = useState(false);
   const [newSectionName, setNewSectionName] = useState('');
-  const [newSectionStudents, setNewSectionStudents] = useState([]); // Initialize as array
+  const [newSectionStudents, setNewSectionStudents] = useState([]);
 
-  // State for Bulk User Upload (CSV)
   const [openBulkUploadModal, setOpenBulkUploadModal] = useState(false);
   const [selectedBulkFile, setSelectedBulkFile] = useState(null);
   const [parsedTableHeaders, setParsedTableHeaders] = useState([]);
@@ -56,26 +51,21 @@ const AdminDashboard = () => {
   const [bulkUploadError, setBulkUploadError] = useState('');
   const [bulkUploadLoading, setBulkUploadLoading] = useState(false);
 
-  // State for Bulk Academic Data Upload (using new UI terminology for local state)
   const [openBulkAcademicModal, setOpenBulkAcademicModal] = useState(false);
   const [newBulkDepartmentId, setNewBulkDepartmentId] = useState('');
-  // New state for selecting an existing Course (backend Subject) in bulk upload
-  const [selectedParentCourseId, setSelectedParentCourseId] = useState('');
-  // New state for the array of new Subject Codes (backend Courses)
+   const [selectedParentCourseId, setSelectedParentCourseId] = useState('');
   const [newSubjectCodesInput, setNewSubjectCodesInput] = useState(['']);
-  // This will store objects like { name: 'CODE', subject: 'PARENT_SUBJECT_ID' }
+  // store objects like { name: 'CODE', subject: 'PARENT_SUBJECT_ID' }
   const [bulkAcademicEntries, setBulkAcademicEntries] = useState([]);
   const [showAcademicReview, setShowAcademicReview] = useState(false);
   const [academicBulkUploadLoading, setAcademicBulkUploadLoading] = useState(false);
   const [academicBulkUploadError, setAcademicBulkUploadError] = useState('');
   const [academicBulkUploadResults, setAcademicBulkUploadResults] = useState(null);
 
-
-  // --- Data Fetching Functions ---
   const fetchUsers = async () => {
     setLoadingUsers(true);
     try {
-      const response = await fetch('https://quark-server-4py2.onrender.com/api/auth/users/all', {
+      const response = await fetch('http://localhost:5000/api/auth/users/all', {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
@@ -95,7 +85,7 @@ const AdminDashboard = () => {
   const fetchLogs = async () => {
     setLoadingLogs(true);
     try {
-      const response = await fetch('https://quark-server-4py2.onrender.com/api/admin/logs', {
+      const response = await fetch('http://localhost:5000/api/admin/logs', {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
@@ -117,10 +107,10 @@ const AdminDashboard = () => {
     setAcademicDataError('');
     try {
       const [deptsRes, subjectsRes, coursesRes, sectionsRes] = await Promise.all([
-        fetch('https://quark-server-4py2.onrender.com/api/misc/departments', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('https://quark-server-4py2.onrender.com/api/misc/subjects', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('https://quark-server-4py2.onrender.com/api/misc/courses', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('https://quark-server-4py2.onrender.com/api/misc/sections', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('http://localhost:5000/api/misc/departments', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('http://localhost:5000/api/misc/subjects', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('http://localhost:5000/api/misc/courses', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('http://localhost:5000/api/misc/sections', { headers: { Authorization: `Bearer ${token}` } }),
       ]);
 
       const deptsData = await deptsRes.json();
@@ -151,7 +141,6 @@ const AdminDashboard = () => {
     }
   }, [user, token]);
 
-  // --- Role Management Handlers ---
   const handleOpenRoleModal = (user) => {
     setSelectedUser(user);
     setNewRole(user.role);
@@ -168,7 +157,7 @@ const AdminDashboard = () => {
     if (!selectedUser || !newRole) return;
 
     try {
-      const response = await fetch('https://quark-server-4py2.onrender.com/api/admin/assign-role', {
+      const response = await fetch('http://localhost:5000/api/admin/assign-role', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -182,8 +171,8 @@ const AdminDashboard = () => {
         setSnackbarMessage('Role updated successfully!');
         setSnackbarSeverity('success');
         setSnackbarOpen(true);
-        fetchUsers(); // Refresh user list
-        fetchLogs(); // Refresh logs
+        fetchUsers(); 
+        fetchLogs();
         handleCloseRoleModal();
       } else {
         setSnackbarMessage(data.message || 'Failed to update role.');
@@ -198,11 +187,11 @@ const AdminDashboard = () => {
     }
   };
 
-  // --- Academic Data Management Handlers ---
+
 
   const handleAddAcademicData = async (type, data) => {
     try {
-      const response = await fetch('https://quark-server-4py2.onrender.com/api/admin/manage-academic-data', {
+      const response = await fetch('http://localhost:5000/api/admin/manage-academic-data', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -215,7 +204,7 @@ const AdminDashboard = () => {
         setSnackbarMessage(`${type} added successfully!`);
         setSnackbarSeverity('success');
         setSnackbarOpen(true);
-        fetchAcademicData(); // Refresh all academic data
+        fetchAcademicData(); 
         return true;
       } else {
         setSnackbarMessage(result.message || `Failed to add ${type}.`);
@@ -241,7 +230,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // Handles adding a 'Course' (which is a backend 'Subject')
   const handleSubmitCourseSingle = async () => {
     if (!newCourseNameSingle || !newCourseDeptSingle) return;
     const success = await handleAddAcademicData('subject', { name: newCourseNameSingle, department: newCourseDeptSingle });
@@ -252,7 +240,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // Handles adding a 'Subject (with Course Code)' (which is a backend 'Course')
   const handleSubmitSubjectSingle = async () => {
     if (!newSubjectCodeSingle || !newSubjectCourseSingle) return;
     const success = await handleAddAcademicData('course', { name: newSubjectCodeSingle, subject: newSubjectCourseSingle });
@@ -260,7 +247,7 @@ const AdminDashboard = () => {
       setOpenAddSubjectSingleModal(false);
       setNewSubjectCodeSingle('');
       setNewSubjectCourseSingle('');
-      setSelectedDepartmentForSubjectSingle(''); // Reset department selection
+      setSelectedDepartmentForSubjectSingle(''); 
     }
   };
 
@@ -282,7 +269,6 @@ const AdminDashboard = () => {
     setSnackbarOpen(false);
   };
 
-  // --- Bulk User Upload Handlers ---
   const handleOpenBulkUploadModal = () => {
     setOpenBulkUploadModal(true);
     setSelectedBulkFile(null);
@@ -316,14 +302,13 @@ const AdminDashboard = () => {
       reader.onload = (event) => {
         try {
           const text = event.target.result;
-          const lines = text.split('\n').filter(line => line.trim() !== ''); // Filter out empty lines
+          const lines = text.split('\n').filter(line => line.trim() !== ''); 
           if (lines.length === 0) {
             setBulkUploadError('CSV file is empty.');
             return;
           }
 
           const headers = lines[0].split(',').map(h => h.trim());
-          // Validate required headers
           const requiredHeaders = ['username', 'email', 'password'];
           const missingHeaders = requiredHeaders.filter(rh => !headers.includes(rh));
           if (missingHeaders.length > 0) {
@@ -335,7 +320,6 @@ const AdminDashboard = () => {
           for (let i = 1; i < lines.length; i++) {
             const values = lines[i].split(',').map(v => v.trim());
             if (values.length !== headers.length) {
-                // Skip malformed rows but log a warning if needed
                 console.warn(`Skipping malformed row ${i + 1}: column count mismatch.`);
                 continue;
             }
@@ -364,67 +348,64 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleBulkUploadSubmit = async () => {
-    if (!parsedTableData || parsedTableData.length === 0) {
-      setBulkUploadError('No user data parsed from the file to upload.');
-      return;
-    }
+const handleBulkUploadSubmit = async () => {
+  if (!parsedTableData || parsedTableData.length === 0) {
+    setBulkUploadError('No user data parsed from the file to upload.');
+    return;
+  }
 
-    // Map parsed CSV data to the format expected by the backend
-    const usersToUpload = parsedTableData.map(row => ({
-      username: row.username,
-      email: row.email,
-      password: row.password,
-      // Default role to 'student' if not provided in CSV or if role column is missing
-      role: row.role && ['student', 'teacher', 'admin'].includes(row.role.toLowerCase()) ? row.role.toLowerCase() : 'student',
-      // Include section if present in CSV
-      section: row.section ? row.section.trim() : undefined,
-    }));
+  const usersToUpload = parsedTableData.map(row => ({
+    username: row.username,
+    email: row.email,
+    password: row.password,
+    role: row.role && ['student', 'teacher', 'admin'].includes(row.role.toLowerCase()) ? row.role.toLowerCase() : 'student',
+    sectionName: row.section ? row.section.trim() : undefined, // Change 'section' to 'sectionName'
+  }));
 
-    setBulkUploadLoading(true);
-    setBulkUploadError('');
+  setBulkUploadLoading(true);
+  setBulkUploadError('');
 
-    try {
-      const response = await fetch('https://quark-server-4py2.onrender.com/api/auth/users/bulk-register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ users: usersToUpload }),
-      });
+  try {
+    const response = await fetch('http://localhost:5000/api/auth/users/bulk-register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`, 
+      },
+      body: JSON.stringify({ usersData: usersToUpload }),
+    });
 
-      const data = await response.json();
+    const data = await response.json();
 
-      if (response.ok) {
-        setSnackbarMessage(`Bulk upload completed: ${data.successful} users added, ${data.failed} failed.`);
-        setSnackbarSeverity('success');
-        setSnackbarOpen(true);
-        handleCloseBulkUploadModal();
-        fetchUsers(); // Refresh user list
-        fetchLogs(); // Refresh logs
-      } else {
-        setBulkUploadError(data.message || 'Bulk upload failed.');
-        setSnackbarMessage(`Bulk upload failed: ${data.message || 'Unknown error'}`);
-        setSnackbarSeverity('error');
-        setSnackbarOpen(true);
-      }
-    } catch (err) {
-      console.error('Error during bulk upload:', err);
-      setBulkUploadError('Network error or invalid data format sent to server.');
-      setSnackbarMessage('Network error during bulk upload.');
+    if (response.ok) {
+      setSnackbarMessage(`Bulk upload completed: ${data.successful} users added, ${data.failed} failed.`);
+      setSnackbarSeverity('success');
+      setSnackbarOpen(true);
+      handleCloseBulkUploadModal();
+      fetchUsers(); 
+      fetchLogs(); 
+    } else {
+      setBulkUploadError(data.message || 'Bulk upload failed.');
+      setSnackbarMessage(`Bulk upload failed: ${data.message || 'Unknown error'}`);
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
-    } finally {
-      setBulkUploadLoading(false);
     }
-  };
+  } catch (err) {
+    console.error('Error during bulk upload:', err);
+    setBulkUploadError('Network error or invalid data format sent to server.');
+    setSnackbarMessage('Network error during bulk upload.');
+    setSnackbarSeverity('error');
+    setSnackbarOpen(true);
+  } finally {
+    setBulkUploadLoading(false);
+  }
+};
 
-  // --- Bulk Academic Data Handlers ---
+
   const handleOpenBulkAcademicModal = () => {
     setOpenBulkAcademicModal(true);
     setNewBulkDepartmentId('');
-    setSelectedParentCourseId(''); // Reset selected parent course
+    setSelectedParentCourseId(''); // Reset selected  course
     setNewSubjectCodesInput(['']); // Reset new subject codes input
     setBulkAcademicEntries([]);
     setShowAcademicReview(false);
@@ -435,7 +416,7 @@ const AdminDashboard = () => {
   const handleCloseBulkAcademicModal = () => {
     setOpenBulkAcademicModal(false);
     setNewBulkDepartmentId('');
-    setSelectedParentCourseId(''); // Reset selected parent course
+    setSelectedParentCourseId(''); // Reset selected course
     setNewSubjectCodesInput(['']); // Reset new subject codes input
     setBulkAcademicEntries([]);
     setShowAcademicReview(false);
@@ -475,7 +456,7 @@ const AdminDashboard = () => {
     }));
 
     setBulkAcademicEntries(prevEntries => [...prevEntries, ...newEntries]);
-    setNewSubjectCodesInput(['']); // Reset input fields
+    setNewSubjectCodesInput(['']); 
     // Keep selectedParentCourseId so user can add more to the same course
     setAcademicBulkUploadError('');
   };
@@ -499,17 +480,13 @@ const AdminDashboard = () => {
     let failedCount = 0;
     const failedDetails = [];
 
-    // Loop through each entry and send an individual 'add course' request
     for (const entry of bulkAcademicEntries) {
         try {
-            // Changed type from 'bulk_subjects_courses' to 'course' as each entry is a single Course (backend model)
-            // The 'course' type corresponds to the backend Course model which represents a Subject (with Code)
             const success = await handleAddAcademicData('course', { name: entry.name, subject: entry.subject });
             if (success) {
                 successfulCount++;
             } else {
                 failedCount++;
-                // If handleAddAcademicData returns false (failed but no network error)
                 failedDetails.push({ entry: entry, reason: `Failed to add ${entry.name}.` });
             }
         } catch (err) {
@@ -533,7 +510,7 @@ const AdminDashboard = () => {
         setSnackbarSeverity('success');
     }
     setSnackbarOpen(true);
-    fetchAcademicData(); // Refresh academic data after upload
+    fetchAcademicData(); 
     setAcademicBulkUploadLoading(false);
   };
 
@@ -543,7 +520,7 @@ const AdminDashboard = () => {
     return dept ? dept.name : 'Unknown Department';
   };
 
-  // Helper to get backend Subject Name (now conceptually a 'Course') by its ID
+  // get backend Subject Name (now Course) 
   const getCourseNameBySubjectId = (subjectId) => {
     const subj = subjects.find(s => s._id === subjectId);
     return subj ? subj.name : 'N/A';
@@ -563,7 +540,6 @@ const AdminDashboard = () => {
       )}
 
       <Grid container spacing={4}>
-        {/* User Management Section */}
         <Grid item xs={12} md={6}>
           <Paper elevation={4} sx={{ p: 3, minHeight: 400, display: 'flex', flexDirection: 'column', borderRadius: 3 }}>
             <Typography variant="h5" component="h2" gutterBottom sx={{ color: 'secondary.dark', fontWeight: 'bold', borderBottom: '2px solid', borderColor: 'divider', pb: 1, mb: 2 }}>
@@ -600,7 +576,7 @@ const AdminDashboard = () => {
           </Paper>
         </Grid>
 
-        {/* Audit Logs Section */}
+
         <Grid item xs={12} md={6}>
           <Paper elevation={4} sx={{ p: 3, minHeight: 400, display: 'flex', flexDirection: 'column', borderRadius: 3 }}>
             <Typography variant="h5" component="h2" gutterBottom sx={{ color: 'secondary.dark', fontWeight: 'bold', borderBottom: '2px solid', borderColor: 'divider', pb: 1, mb: 2 }}>
@@ -633,7 +609,6 @@ const AdminDashboard = () => {
           </Paper>
         </Grid>
 
-        {/* Academic Data Management Section */}
         <Grid item xs={12}>
           <Paper elevation={4} sx={{ p: 3, borderRadius: 3 }}>
             <Typography variant="h5" component="h2" gutterBottom sx={{ color: 'secondary.dark', fontWeight: 'bold', borderBottom: '2px solid', borderColor: 'divider', pb: 1, mb: 2 }}>
@@ -649,7 +624,6 @@ const AdminDashboard = () => {
               </Alert>
             ) : (
               <Grid container spacing={3}>
-                {/* Department Card */}
                 <Grid item xs={12} sm={6} md={3}>
                   <Paper variant="outlined" sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderRadius: 2, border: '1px solid #ddd' }}>
                     <Typography variant="h6" sx={{ color: 'primary.main', mb: 1 }}>Departments</Typography>
@@ -662,11 +636,10 @@ const AdminDashboard = () => {
                     </Button>
                   </Paper>
                 </Grid>
-                {/* Courses Card (was Subject) */}
                 <Grid item xs={12} sm={6} md={3}>
                   <Paper variant="outlined" sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderRadius: 2, border: '1px solid #ddd' }}>
                     <Typography variant="h6" sx={{ color: 'primary.main', mb: 1 }}>Courses</Typography> {/* Renamed from Subjects */}
-                    <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'text.primary', mb: 2 }}>{subjects.length}</Typography> {/* Still uses 'subjects' state for backend Subjects */}
+                    <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'text.primary', mb: 2 }}>{subjects.length}</Typography> 
                     <Box sx={{ maxHeight: 80, overflowY: 'auto', mb: 1, p: 0.5, backgroundColor: 'background.default', borderRadius: 1 }}>
                       {subjects.map(s => <Typography key={s._id} variant="body2" color="text.secondary">{s.name} ({s.department?.name || 'N/A'})</Typography>)}
                     </Box>
@@ -680,17 +653,17 @@ const AdminDashboard = () => {
                 <Grid item xs={12} sm={6} md={3}>
                   <Paper variant="outlined" sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderRadius: 2, border: '1px solid #ddd' }}>
                     <Typography variant="h6" sx={{ color: 'primary.main', mb: 1 }}>Subjects (with Course Code)</Typography> {/* Renamed from Courses */}
-                    <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'text.primary', mb: 2 }}>{courses.length}</Typography> {/* Still uses 'courses' state for backend Courses */}
+                    <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'text.primary', mb: 2 }}>{courses.length}</Typography> 
                     <Box sx={{ maxHeight: 80, overflowY: 'auto', mb: 1, p: 0.5, backgroundColor: 'background.default', borderRadius: 1 }}>
-                      {courses.map(c => <Typography key={c._id} variant="body2" color="text.secondary">{c.name} ({getCourseNameBySubjectId(c.subject?._id)})</Typography>)} {/* Use helper for new Course Name */}
+                      {courses.map(c => <Typography key={c._id} variant="body2" color="text.secondary">{c.name} ({getCourseNameBySubjectId(c.subject?._id)})</Typography>)} 
                     </Box>
-                    <Button variant="contained" size="small" fullWidth onClick={() => setOpenAddSubjectSingleModal(true)} disabled={subjects.length === 0} sx={{ mt: 'auto', borderRadius: 2 }}> {/* Calls new modal state */}
+                    <Button variant="contained" size="small" fullWidth onClick={() => setOpenAddSubjectSingleModal(true)} disabled={subjects.length === 0} sx={{ mt: 'auto', borderRadius: 2 }}> 
                       Add Subject
                     </Button>
-                    {subjects.length === 0 && <Typography variant="caption" color="error" sx={{ textAlign: 'center', mt: 0.5 }}>Add a Course first</Typography>} {/* Text adjusted */}
+                    {subjects.length === 0 && <Typography variant="caption" color="error" sx={{ textAlign: 'center', mt: 0.5 }}>Add a Course first</Typography>} 
                   </Paper>
                 </Grid>
-                {/* Section Card */}
+
                 <Grid item xs={12} sm={6} md={3}>
                   <Paper variant="outlined" sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderRadius: 2, border: '1px solid #ddd' }}>
                     <Typography variant="h6" sx={{ color: 'primary.main', mb: 1 }}>Sections</Typography>
@@ -724,7 +697,6 @@ const AdminDashboard = () => {
         </Alert>
       </Snackbar>
 
-      {/* Role Assignment Modal */}
       <Modal
         aria-labelledby="role-modal-title"
         aria-describedby="role-modal-description"
@@ -765,7 +737,6 @@ const AdminDashboard = () => {
         </Fade>
       </Modal>
 
-      {/* Add Department Modal */}
       <Modal
         aria-labelledby="add-dept-modal-title"
         open={openAddDeptModal}
@@ -798,7 +769,6 @@ const AdminDashboard = () => {
         </Fade>
       </Modal>
 
-      {/* Add Course Modal (was Add Subject) */}
       <Modal
         aria-labelledby="add-course-modal-title"
         open={openAddCourseSingleModal}
@@ -816,7 +786,7 @@ const AdminDashboard = () => {
               Add New Course
             </Typography>
             <TextField
-              label="Course Name" /* Changed label */
+              label="Course Name" /* Changed label to avoidconfusion */
               fullWidth
               value={newCourseNameSingle}
               onChange={(e) => setNewCourseNameSingle(e.target.value)}
@@ -841,13 +811,12 @@ const AdminDashboard = () => {
             </FormControl>
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
               <Button onClick={() => setOpenAddCourseSingleModal(false)} sx={{ mr: 2 }}>Cancel</Button>
-              <Button variant="contained" onClick={handleSubmitCourseSingle}>Add Course</Button> {/* Calls new handler */}
+              <Button variant="contained" onClick={handleSubmitCourseSingle}>Add Course</Button> 
             </Box>
           </Box>
         </Fade>
       </Modal>
 
-      {/* Add Subject (with Course Code) Modal (was Add Course) */}
       <Modal
         aria-labelledby="add-subject-modal-title"
         open={openAddSubjectSingleModal}
@@ -869,7 +838,6 @@ const AdminDashboard = () => {
             <Typography id="add-subject-modal-title" variant="h6" component="h2" gutterBottom sx={{ color: 'primary.dark', fontWeight: 'bold' }}>
               Add New Subject (with Course Code)
             </Typography>
-            {/* Department Dropdown for filtering Courses (Subjects from backend) */}
             <FormControl fullWidth margin="normal" required>
               <InputLabel id="select-dept-for-subject-label">Department</InputLabel>
               <Select
@@ -878,7 +846,7 @@ const AdminDashboard = () => {
                 label="Department"
                 onChange={(e) => {
                   setSelectedDepartmentForSubjectSingle(e.target.value);
-                  setNewSubjectCourseSingle(''); // Clear selected course when department changes
+                  setNewSubjectCourseSingle('');
                 }}
                 sx={{ borderRadius: 2 }}
               >
@@ -891,7 +859,7 @@ const AdminDashboard = () => {
             </FormControl>
 
             <TextField
-              label="Subject Code (e.g., ECE24304)" /* Changed label */
+              label="Subject with Subject Code (e.g., ECE24304 - MPMC)" 
               fullWidth
               value={newSubjectCodeSingle}
               onChange={(e) => setNewSubjectCodeSingle(e.target.value)}
@@ -899,18 +867,18 @@ const AdminDashboard = () => {
               required
             />
             <FormControl fullWidth margin="normal" required>
-              <InputLabel id="select-course-label">Course</InputLabel> {/* Changed label */}
+              <InputLabel id="select-course-label">Course</InputLabel> 
               <Select
                 labelId="select-course-label"
                 value={newSubjectCourseSingle}
-                label="Course" /* Changed label */
+                label="Course" 
                 onChange={(e) => setNewSubjectCourseSingle(e.target.value)}
                 sx={{ borderRadius: 2 }}
-                disabled={!selectedDepartmentForSubjectSingle} // Disable until department is selected
+                disabled={!selectedDepartmentForSubjectSingle} 
               >
                 {subjects
-                  .filter(sub => sub.department?._id === selectedDepartmentForSubjectSingle) // Corrected filter here
-                  .map((sub) => ( /* Still maps over 'subjects' state (backend subjects) */
+                  .filter(sub => sub.department?._id === selectedDepartmentForSubjectSingle) 
+                  .map((sub) => ( 
                     <MenuItem key={sub._id} value={sub._id}>
                       {sub.name}
                     </MenuItem>
@@ -927,13 +895,13 @@ const AdminDashboard = () => {
                 setNewSubjectCodeSingle('');
                 setNewSubjectCourseSingle('');
               }} sx={{ mr: 2 }}>Cancel</Button>
-              <Button variant="contained" onClick={handleSubmitSubjectSingle}>Add Subject</Button> {/* Calls new handler */}
+              <Button variant="contained" onClick={handleSubmitSubjectSingle}>Add Subject</Button> 
             </Box>
           </Box>
         </Fade>
       </Modal>
 
-      {/* Add Section Modal */}
+
       <Modal
         aria-labelledby="add-section-modal-title"
         open={openAddSectionModal}
@@ -969,7 +937,7 @@ const AdminDashboard = () => {
                 label="Assign Students (Optional)"
                 sx={{ borderRadius: 2 }}
               >
-                {users.filter(u => u.role === 'student').map((s) => ( // Only list students
+                {users.filter(u => u.role === 'student').map((s) => ( 
                   <MenuItem key={s._id} value={s._id}>
                     {s.username} ({s.email})
                   </MenuItem>
@@ -987,7 +955,6 @@ const AdminDashboard = () => {
         </Fade>
       </Modal>
 
-      {/* Bulk User Upload Modal */}
       <Modal
         aria-labelledby="bulk-upload-modal-title"
         open={openBulkUploadModal}
@@ -999,7 +966,7 @@ const AdminDashboard = () => {
         <Fade in={openBulkUploadModal}>
           <Box sx={{
             position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-            width: { xs: '90%', sm: 600, md: 700 }, // Wider for table preview
+            width: { xs: '90%', sm: 600, md: 700 }, 
             bgcolor: 'background.paper', borderRadius: 3, boxShadow: 24, p: 4,
             maxHeight: '90vh', overflowY: 'auto'
           }}>
@@ -1015,9 +982,9 @@ const AdminDashboard = () => {
             <Paper variant="outlined" sx={{ p: 1.5, mb: 2, bgcolor: theme => theme.palette.grey[100], overflowX: 'auto' }}>
                 <pre style={{ margin: 0, fontSize: '0.8rem', color: theme => theme.palette.grey[800] }}>
 {`username,email,password,role,section
-john.doe,john@example.com,Password123,student,SectionA
-jane.smith,jane@example.com,SecurePass456,teacher,
-mike.jones,mike@example.com,MikePass789,student,SectionB`}
+rajesh.kumar,rajesh.kumar@example.com,InitialPass!1,student,CSE-1
+priya.sharma,priya.sharma@example.com,InitialPass!2,student,ME-1
+neha.gupta,neha.gupta@example.com,InitialPass!4,student,ECE-3`}
                 </pre>
             </Paper>
 
@@ -1085,7 +1052,6 @@ mike.jones,mike@example.com,MikePass789,student,SectionB`}
         </Fade>
       </Modal>
 
-      {/* Bulk Academic Data Upload Modal */}
       <Modal
         aria-labelledby="bulk-academic-modal-title"
         open={openBulkAcademicModal}
@@ -1097,16 +1063,16 @@ mike.jones,mike@example.com,MikePass789,student,SectionB`}
         <Fade in={openBulkAcademicModal}>
           <Box sx={{
             position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-            width: { xs: '90%', sm: 600, md: 700 }, // Wider for review table
+            width: { xs: '90%', sm: 600, md: 700 }, 
             bgcolor: 'background.paper', borderRadius: 3, boxShadow: 24, p: 4,
             maxHeight: '90vh', overflowY: 'auto'
           }}>
             <Typography id="bulk-academic-modal-title" variant="h6" component="h2" gutterBottom sx={{ color: 'primary.dark', fontWeight: 'bold' }}>
-              Bulk Add Subjects (with Course Codes) {/* Updated title */}
+              Bulk Add Subjects (with Course Codes) 
             </Typography>
 
             {!showAcademicReview ? (
-                // Input Form
+
                 <>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                         Select a department, then a course, and add multiple subjects with their course codes.
@@ -1119,9 +1085,9 @@ mike.jones,mike@example.com,MikePass789,student,SectionB`}
                             label="Department"
                             onChange={(e) => {
                                 setNewBulkDepartmentId(e.target.value);
-                                setSelectedParentCourseId(''); // Reset selected course when department changes
-                                setNewSubjectCodesInput(['']); // Reset subject codes input
-                                setAcademicBulkUploadError(''); // Clear error
+                                setSelectedParentCourseId(''); 
+                                setNewSubjectCodesInput(['']); 
+                                setAcademicBulkUploadError(''); 
                             }}
                             sx={{ borderRadius: 2 }}
                             disabled={departments.length === 0}
@@ -1148,14 +1114,14 @@ mike.jones,mike@example.com,MikePass789,student,SectionB`}
                             label="Select Course"
                             onChange={(e) => {
                                 setSelectedParentCourseId(e.target.value);
-                                setNewSubjectCodesInput(['']); // Reset subject codes when course changes
-                                setAcademicBulkUploadError(''); // Clear error
+                                setNewSubjectCodesInput(['']); 
+                                setAcademicBulkUploadError(''); 
                             }}
                             sx={{ borderRadius: 2 }}
                             disabled={!newBulkDepartmentId}
                         >
                             {subjects // These are backend 'Subject' records, which are 'Courses' in UI
-                                .filter(s => s.department?._id === newBulkDepartmentId) // Corrected filter here
+                                .filter(s => s.department?._id === newBulkDepartmentId) // Corrected filter
                                 .map((sub) => (
                                     <MenuItem key={sub._id} value={sub._id}>
                                         {sub.name}
@@ -1232,7 +1198,7 @@ mike.jones,mike@example.com,MikePass789,student,SectionB`}
                                     <TableBody>
                                         {bulkAcademicEntries.map((entry, index) => (
                                             <TableRow key={index}>
-                                                <TableCell>{getCourseNameBySubjectId(entry.subject)}</TableCell> {/* Display parent course name */}
+                                                <TableCell>{getCourseNameBySubjectId(entry.subject)}</TableCell> {/* Display  course name */}
                                                 <TableCell>{entry.name}</TableCell> {/* Display new subject code */}
                                                 <TableCell>
                                                     <IconButton onClick={() => handleRemoveAcademicEntry(index)} color="error" size="small">

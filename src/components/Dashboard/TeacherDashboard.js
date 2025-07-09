@@ -1,13 +1,13 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 import { Box, Typography, Paper, Grid, Button, CircularProgress, Alert, Card, CardContent, CardActions, useTheme, Chip,
-         Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar // Added Dialog components for custom modals
+         Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import DeleteIcon from '@mui/icons-material/Delete';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
-import DownloadIcon from '@mui/icons-material/Download'; // Import download icon
+import DownloadIcon from '@mui/icons-material/Download';
 
 const TeacherDashboard = () => {
   const { user, token } = useContext(AuthContext);
@@ -15,49 +15,43 @@ const TeacherDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const theme = useTheme(); // Access the theme for consistent styling
+  const theme = useTheme();
 
-  // State for View Paper password modal
   const [openViewPaperPasswordModal, setOpenViewPaperPasswordModal] = useState(false);
   const [currentPaperForView, setCurrentPaperForView] = useState(null);
   const [viewPaperPasswordInput, setViewPaperPasswordInput] = useState('');
   const [viewPasswordModalError, setViewPasswordModalError] = useState('');
 
-  // State for Delete Paper confirmation dialog
   const [openDeleteConfirmDialog, setOpenDeleteConfirmDialog] = useState(false);
   const [paperToDelete, setPaperToDelete] = useState(null);
 
-  // State for Download Paper password modal
   const [openDownloadPaperModal, setOpenDownloadPaperModal] = useState(false);
   const [currentPaperForDownload, setCurrentPaperForDownload] = useState(null);
-  const [downloadLoginPassword, setDownloadLoginPassword] = useState('');
+  const [downloadOTP, setDownloadOTP] = useState('');
   const [downloadPaperSpecificPassword, setDownloadPaperSpecificPassword] = useState('');
   const [downloadModalError, setDownloadModalError] = useState('');
   const [downloadLoading, setDownloadLoading] = useState(false);
+  const [requestOTPLoading, setRequestOTPLoading] = useState(false);
 
-  // Snackbar for general feedback
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
 
 
   useEffect(() => {
-    const fetchTeacherPapers = async () => {
+    const fetchPapers = async () => {
       setLoading(true);
       try {
-        const response = await fetch('https://quark-server-4py2.onrender.com/api/papers/list', {
+        const response = await fetch('http://localhost:5000/api/papers/list', {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await response.json();
         if (response.ok) {
-          // Filter papers uploaded by the current teacher AND include 'requiresPassword' flag
-          const teacherPapers = data.filter(paper => paper.facultyId?._id === user._id);
-          setPapers(teacherPapers);
+          setPapers(data);
         } else {
           setError(data.message || 'Failed to fetch papers.');
         }
       } catch (err) {
-        console.error('Error fetching teacher papers:', err);
         setError('Network error fetching papers.');
       } finally {
         setLoading(false);
@@ -65,7 +59,7 @@ const TeacherDashboard = () => {
     };
 
     if (user && token) {
-      fetchTeacherPapers();
+      fetchPapers();
     }
   }, [user, token]);
 
@@ -73,10 +67,9 @@ const TeacherDashboard = () => {
     setCurrentPaperForView(paper);
     if (paper.requiresPassword) {
       setOpenViewPaperPasswordModal(true);
-      setViewPaperPasswordInput(''); // Clear previous input
-      setViewPasswordModalError(''); // Clear previous error
+      setViewPaperPasswordInput('');
+      setViewPasswordModalError('');
     } else {
-      // If no password is required, navigate directly
       navigate(`/view-paper/${paper._id}`);
     }
   };
@@ -86,9 +79,8 @@ const TeacherDashboard = () => {
       setViewPasswordModalError('Please enter the paper password.');
       return;
     }
-    // Navigate to ViewPaper, passing the password in state
     navigate(`/view-paper/${currentPaperForView._id}`, { state: { paperPassword: viewPaperPasswordInput } });
-    setOpenViewPaperPasswordModal(false); // Close the modal
+    setOpenViewPaperPasswordModal(false);
   };
 
   const handleDeletePaper = (paper) => {
@@ -96,51 +88,83 @@ const TeacherDashboard = () => {
     setOpenDeleteConfirmDialog(true);
   };
 
-  const confirmDeletePaper = async () => {
+  const handleConfirmDelete = async () => {
     if (!paperToDelete) return;
 
-    setLoading(true); // Set loading for the entire dashboard
-    setOpenDeleteConfirmDialog(false); // Close dialog
-
+    setLoading(true);
     try {
-      const response = await fetch(`https://quark-server-4py2.onrender.com/api/papers/${paperToDelete._id}`, {
+      const response = await fetch(`http://localhost:5000/api/papers/${paperToDelete._id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
 
       const data = await response.json();
       if (response.ok) {
-        setSnackbarMessage(data.message);
+        setSnackbarMessage('Paper deleted successfully!');
         setSnackbarSeverity('success');
         setSnackbarOpen(true);
-        setPapers(papers.filter(paper => paper._id !== paperToDelete._id)); // Remove deleted paper from state
+        setPapers(papers.filter(p => p._id !== paperToDelete._id));
       } else {
         setSnackbarMessage(data.message || 'Failed to delete paper.');
         setSnackbarSeverity('error');
         setSnackbarOpen(true);
       }
     } catch (err) {
-      console.error('Error deleting paper:', err);
-      setSnackbarMessage('Network error while deleting paper.');
+      setSnackbarMessage('Network error during deletion.');
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
     } finally {
-      setLoading(false); // End loading for the entire dashboard
+      setLoading(false);
+      setOpenDeleteConfirmDialog(false);
       setPaperToDelete(null);
     }
   };
 
   const handleOpenDownloadPaperModal = (paper) => {
     setCurrentPaperForDownload(paper);
-    setDownloadLoginPassword('');
+    setDownloadOTP('');
     setDownloadPaperSpecificPassword('');
     setDownloadModalError('');
+    setRequestOTPLoading(false);
     setOpenDownloadPaperModal(true);
   };
 
+  const handleRequestOTP = async () => {
+    setRequestOTPLoading(true);
+    setDownloadModalError('');
+    try {
+        const response = await fetch('http://localhost:5000/api/auth/request-otp', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ email: user.email }),
+        });
+        const data = await response.json();
+        if (response.ok) {
+            setSnackbarMessage('OTP sent to your registered email!');
+            setSnackbarSeverity('success');
+            setSnackbarOpen(true);
+        } else {
+            setDownloadModalError(data.message || 'Failed to request OTP.');
+            setSnackbarMessage(data.message || 'Failed to request OTP.');
+            setSnackbarSeverity('error');
+            setSnackbarOpen(true);
+        }
+    } catch (err) {
+        setDownloadModalError('Network error while requesting OTP.');
+        setSnackbarMessage('Network error while requesting OTP.');
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
+    } finally {
+        setRequestOTPLoading(false);
+    }
+  };
+
   const handleConfirmDownloadPaper = async () => {
-    if (!currentPaperForDownload || !downloadLoginPassword) {
-      setDownloadModalError('Please enter your login password.');
+    if (!currentPaperForDownload || !downloadOTP) {
+      setDownloadModalError('Please enter the OTP.');
       return;
     }
     if (currentPaperForDownload.requiresPassword && !downloadPaperSpecificPassword) {
@@ -149,25 +173,25 @@ const TeacherDashboard = () => {
     }
 
     setDownloadLoading(true);
-    setDownloadModalError(''); // Clear previous errors
+    setDownloadModalError('');
 
     try {
-      const response = await fetch(`https://quark-server-4py2.onrender.com/api/papers/download/${currentPaperForDownload._id}`, {
+      const response = await fetch(`http://localhost:5000/api/papers/download/${currentPaperForDownload._id}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          password: downloadLoginPassword, // User's login password
-          paperPassword: currentPaperForDownload.requiresPassword ? downloadPaperSpecificPassword : undefined // Paper's specific password (if required)
+          otp: downloadOTP,
+          paperPassword: currentPaperForDownload.requiresPassword ? downloadPaperSpecificPassword : undefined
         }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        const watermarkedPdfBase64 = data.content; // This is the data URI string
+        const watermarkedPdfBase64 = data.content;
         const filename = `${currentPaperForDownload.title.replace(/\s/g, '_')}_Watermarked_${user?.username || 'user'}.pdf`;
 
         const link = document.createElement('a');
@@ -180,7 +204,7 @@ const TeacherDashboard = () => {
         setSnackbarMessage('Paper downloaded successfully with your user ID watermark!');
         setSnackbarSeverity('success');
         setSnackbarOpen(true);
-        setOpenDownloadPaperModal(false); // Close modal
+        setOpenDownloadPaperModal(false);
       } else {
         setDownloadModalError(data.message || 'Download failed.');
         setSnackbarMessage(data.message || 'Download failed.');
@@ -188,7 +212,6 @@ const TeacherDashboard = () => {
         setSnackbarOpen(true);
       }
     } catch (err) {
-      console.error('Error during paper download:', err);
       setDownloadModalError('Network error during download.');
       setSnackbarMessage('Network error during download.');
       setSnackbarSeverity('error');
@@ -197,7 +220,6 @@ const TeacherDashboard = () => {
       setDownloadLoading(false);
     }
   };
-
 
   const handleCloseSnackbar = (event, reason) => {
     if (reason === 'clickaway') {
@@ -212,25 +234,8 @@ const TeacherDashboard = () => {
         Teacher Dashboard
       </Typography>
       <Typography variant="body1" sx={{ mb: 3, color: 'text.secondary' }}>
-        Manage your uploaded question papers and prepare for upcoming exams.
+        Manage your uploaded question papers and monitor student access.
       </Typography>
-
-      <Button
-        variant="contained"
-        color="primary"
-        startIcon={<UploadFileIcon />}
-        sx={{
-          mb: 4,
-          px: 4,
-          py: 1.5,
-          fontSize: '1.1rem',
-          fontWeight: theme.typography.fontWeightBold,
-          borderRadius: 3,
-        }}
-        onClick={() => navigate('/upload-paper')}
-      >
-        Upload New Question Paper
-      </Button>
 
       {error && (
         <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
@@ -238,9 +243,19 @@ const TeacherDashboard = () => {
         </Alert>
       )}
 
+      <Button
+        variant="contained"
+        color="primary"
+        startIcon={<UploadFileIcon />}
+        sx={{ mb: 3, py: 1.5, px: 3, borderRadius: 2 }}
+        onClick={() => navigate('/upload-paper')}
+      >
+        Upload New Paper
+      </Button>
+
       <Paper elevation={4} sx={{ p: { xs: 2, md: 3 }, minHeight: 300, borderRadius: 3 }}>
         <Typography variant="h5" component="h2" gutterBottom sx={{ color: 'secondary.dark', fontWeight: 'bold', borderBottom: '2px solid', borderColor: 'divider', pb: 1, mb: 3 }}>
-          Your Uploaded Papers
+          My Uploaded Papers
         </Typography>
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
@@ -248,7 +263,7 @@ const TeacherDashboard = () => {
           </Box>
         ) : papers.length === 0 ? (
           <Typography variant="body1" color="text.secondary" sx={{ textAlign: 'center', mt: 4 }}>
-            You haven't uploaded any papers yet. Click "Upload New Question Paper" to get started!
+            You haven't uploaded any papers yet.
           </Typography>
         ) : (
           <Grid container spacing={3}>
@@ -281,7 +296,7 @@ const TeacherDashboard = () => {
                       Semester: {paper.semester}
                     </Typography>
                     <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
-                      Available: {new Date(paper.validFrom).toLocaleDateString()} - {new Date(paper.validTo).toLocaleDateString()}
+                      Valid: {new Date(paper.validFrom).toLocaleDateString()} - {new Date(paper.validTo).toLocaleDateString()}
                     </Typography>
                   </CardContent>
                   <CardActions sx={{ justifyContent: 'flex-end', p: 2 }}>
@@ -290,7 +305,7 @@ const TeacherDashboard = () => {
                       variant="contained"
                       color="secondary"
                       startIcon={<VisibilityIcon />}
-                      onClick={() => handleViewPaper(paper)} // Pass entire paper object
+                      onClick={() => handleViewPaper(paper)}
                       sx={{ borderRadius: 2 }}
                     >
                       View
@@ -300,23 +315,21 @@ const TeacherDashboard = () => {
                         variant="outlined"
                         color="primary"
                         startIcon={<DownloadIcon />}
-                        onClick={() => handleOpenDownloadPaperModal(paper)} // Pass entire paper object
+                        onClick={() => handleOpenDownloadPaperModal(paper)}
                         sx={{ borderRadius: 2, ml: 1 }}
                     >
                         Download
                     </Button>
-                    {(user?.role === 'admin' || (user?.role === 'teacher' && user?._id === paper.facultyId?._id)) && (
-                        <Button
-                        size="small"
-                        variant="outlined"
-                        color="error"
-                        startIcon={<DeleteIcon />}
-                        onClick={() => handleDeletePaper(paper)} // Pass entire paper object
-                        sx={{ borderRadius: 2, ml: 1 }}
-                        >
-                        Delete
-                        </Button>
-                    )}
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color="error"
+                      startIcon={<DeleteIcon />}
+                      onClick={() => handleDeletePaper(paper)}
+                      sx={{ borderRadius: 2, ml: 1 }}
+                    >
+                      Delete
+                    </Button>
                   </CardActions>
                 </Card>
               </Grid>
@@ -325,7 +338,6 @@ const TeacherDashboard = () => {
         )}
       </Paper>
 
-      {/* View Paper Password Dialog */}
       <Dialog open={openViewPaperPasswordModal} onClose={() => setOpenViewPaperPasswordModal(false)}>
         <DialogTitle>Enter Paper Password</DialogTitle>
         <DialogContent>
@@ -356,37 +368,48 @@ const TeacherDashboard = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
       <Dialog open={openDeleteConfirmDialog} onClose={() => setOpenDeleteConfirmDialog(false)}>
         <DialogTitle>Confirm Deletion</DialogTitle>
         <DialogContent>
           <Typography>Are you sure you want to delete "{paperToDelete?.title}"?</Typography>
-          <Typography variant="body2" color="error">This action cannot be undone.</Typography>
+          <Typography variant="body2" color="error" sx={{ mt: 1 }}>This action cannot be undone.</Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenDeleteConfirmDialog(false)}>Cancel</Button>
-          <Button onClick={confirmDeletePaper} color="error" variant="contained">Delete</Button>
+          <Button onClick={handleConfirmDelete} variant="contained" color="error" disabled={loading}>
+            {loading ? <CircularProgress size={24} color="inherit" /> : 'Delete'}
+          </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Download Paper Password Dialog */}
       <Dialog open={openDownloadPaperModal} onClose={() => setOpenDownloadPaperModal(false)}>
         <DialogTitle>Download "{currentPaperForDownload?.title}"</DialogTitle>
         <DialogContent>
           <Typography variant="body2" sx={{ mb: 2 }}>
-            To download, please enter your login password and the paper's password (if required).
+            To download, please enter the OTP sent to your registered email and the paper's password (if required).
           </Typography>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Your Login Password"
-            type="password"
-            fullWidth
-            variant="outlined"
-            value={downloadLoginPassword}
-            onChange={(e) => setDownloadLoginPassword(e.target.value)}
-            sx={{ mb: 2 }}
-          />
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
+            <TextField
+              autoFocus
+              margin="dense"
+              label="OTP"
+              type="text"
+              fullWidth
+              variant="outlined"
+              value={downloadOTP}
+              onChange={(e) => setDownloadOTP(e.target.value)}
+              error={!!downloadModalError && downloadModalError.includes('OTP')}
+              helperText={downloadModalError && downloadModalError.includes('OTP') ? downloadModalError : ''}
+            />
+            <Button
+              variant="outlined"
+              onClick={handleRequestOTP}
+              disabled={requestOTPLoading}
+              sx={{ flexShrink: 0, height: 'fit-content' }}
+            >
+              {requestOTPLoading ? <CircularProgress size={24} color="inherit" /> : 'Request OTP'}
+            </Button>
+          </Box>
           {currentPaperForDownload?.requiresPassword && (
             <TextField
               margin="dense"
@@ -396,9 +419,11 @@ const TeacherDashboard = () => {
               variant="outlined"
               value={downloadPaperSpecificPassword}
               onChange={(e) => setDownloadPaperSpecificPassword(e.target.value)}
+              error={!!downloadModalError && downloadModalError.includes('paper-specific password')}
+              helperText={downloadModalError && downloadModalError.includes('paper-specific password') ? downloadModalError : ''}
             />
           )}
-          {downloadModalError && (
+          {downloadModalError && !downloadModalError.includes('OTP') && !downloadModalError.includes('paper-specific password') && (
             <Alert severity="error" sx={{ mt: 2 }}>{downloadModalError}</Alert>
           )}
         </DialogContent>
@@ -407,7 +432,7 @@ const TeacherDashboard = () => {
           <Button
             onClick={handleConfirmDownloadPaper}
             variant="contained"
-            disabled={downloadLoading || !downloadLoginPassword || (currentPaperForDownload?.requiresPassword && !downloadPaperSpecificPassword)}
+            disabled={downloadLoading || !downloadOTP || (currentPaperForDownload?.requiresPassword && !downloadPaperSpecificPassword)}
           >
             {downloadLoading ? <CircularProgress size={24} color="inherit" /> : 'Confirm & Download'}
           </Button>

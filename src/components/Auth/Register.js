@@ -10,25 +10,25 @@ const Register = () => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('student'); // Default role
-  const [sections, setSections] = useState([]); // State to store fetched sections
-  const [selectedSection, setSelectedSection] = useState(''); // State for student's selected section
+  const [role, setRole] = useState('student'); // default role
+  const [sections, setSections] = useState([]); 
+  const [selectedSection, setSelectedSection] = useState(''); 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
 
-  const [showReview, setShowReview] = useState(false); // Controls review screen visibility
-  const [openConfirmDialog, setOpenConfirmDialog] = useState(false); // Controls final confirmation dialog
+  const [showReview, setShowReview] = useState(false); 
+  const [openConfirmDialog, setOpenConfirmDialog] = useState(false); 
 
   const navigate = useNavigate();
 
-  // Fetch sections when the component mounts or role changes to student
+  // fetch sections when role changes to student
   useEffect(() => {
     const fetchSections = async () => {
       try {
-        // Corrected: Use the public endpoint for fetching sections for registration
+        // USing the public endpoint for fetching sections for registration
         const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/misc/sections-public`);
         const data = await response.json();
         if (response.ok) {
@@ -51,15 +51,14 @@ const Register = () => {
     if (role === 'student') {
       fetchSections();
     } else {
-      setSelectedSection(''); // Clear section if role is not student
+      setSelectedSection(''); 
     }
-  }, [role]); // Re-run when role changes
+  }, [role]);
 
   const handleNextOrReview = (e) => {
     e.preventDefault();
     setError('');
 
-    // Basic client-side validation
     if (!username || !email || !password) {
       setError('Please fill in all required fields.');
       return;
@@ -103,7 +102,7 @@ const Register = () => {
         setSnackbarMessage('Registration successful! You can now log in.');
         setSnackbarSeverity('success');
         setOpenSnackbar(true);
-        // Optionally redirect after a short delay
+        
         setTimeout(() => navigate('/login'), 2000);
       } else {
         setError(data.message || 'Registration failed. Please try again.');
@@ -144,7 +143,7 @@ const Register = () => {
           Register
         </Typography>
         {!showReview ? (
-          // Registration Form
+          // registration form code
           <form onSubmit={handleNextOrReview}>
             <TextField
               label="Username"
@@ -188,7 +187,7 @@ const Register = () => {
               >
                 <MenuItem value="student">Student</MenuItem>
                 <MenuItem value="teacher">Teacher</MenuItem>
-                {/* Admin role typically assigned by existing admin, not during self-registration */}
+
               </Select>
             </FormControl>
 
@@ -204,7 +203,7 @@ const Register = () => {
                   variant="outlined"
                 >
                   <MenuItem value="">
-                    <em>None</em>
+                    <em>Loading Sections...</em>
                   </MenuItem>
                   {sections.map((section) => (
                     <MenuItem key={section._id} value={section._id}>
@@ -232,7 +231,7 @@ const Register = () => {
             </Button>
           </form>
         ) : (
-          // Review Screen
+          // Review area
           <Box>
             <Typography variant="h5" align="center" gutterBottom sx={{ mt: 2, mb: 3, color: 'secondary.main' }}>
               Review Your Registration
@@ -290,17 +289,16 @@ const Register = () => {
         </Typography>
       </Paper>
 
-      {/* Confirmation Dialog */}
       <Dialog
         open={openConfirmDialog}
         onClose={handleCloseConfirmDialog}
         aria-labelledby="confirm-dialog-title"
         aria-describedby="confirm-dialog-description"
       >
-        <DialogTitle id="confirm-dialog-title">Confirm Registration</DialogTitle>
+        <DialogTitle id="confirm-dialog-title">Confirm Registration and Freeze Data</DialogTitle>
         <DialogContent>
           <Typography id="confirm-dialog-description">
-            Please review your details carefully. Once registered, your username, email, and role cannot be changed directly by you. You may need administrator assistance for modifications.
+            Please review your details carefully. Once registered, you cannot change the details. You may need to contact administrator for modifications.
           </Typography>
         </DialogContent>
         <DialogActions>

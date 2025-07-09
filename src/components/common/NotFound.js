@@ -1,5 +1,3 @@
-// A simple 404 Not Found page.
-
 import React from 'react';
 import { Box, Typography, Button } from '@mui/material';
 
