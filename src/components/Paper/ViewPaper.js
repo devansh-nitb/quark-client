@@ -315,16 +315,16 @@ const ViewPaper = () => {
           <IconButton onClick={handleZoomIn} disabled={scale >= 2.0}>
             <ZoomInIcon />
           </IconButton>
-          // <Button
-          //   variant="contained"
-          //   color="primary"
-          //   startIcon={<DownloadIcon />}
-          //   sx={{ ml: 2 }}
-          //   onClick={handleOpenDownloadDialog}
-          //   disabled={!paperContent}
-          // >
-          //   Download
-          // </Button>
+          {/* <Button
+            variant="contained"
+            color="primary"
+            startIcon={<DownloadIcon />}
+            sx={{ ml: 2 }}
+            onClick={handleOpenDownloadDialog}
+            disabled={!paperContent}
+          >
+            Download
+          </Button> */}
         </Box>
       </Box>
 
