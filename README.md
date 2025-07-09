@@ -1,12 +1,12 @@
 # 🔐 QUARK — Question Upload and Access Repository Kit
 
-A secure platform for managing, uploading, and accessing question papers within educational institutions.
+A secure platform for managing, uploading, and accessing question papers or assessment modules.
 
 ---
 
 ## 📘 Overview
 
-**QUARK** (Question Upload and Access Repository Kit) is a robust, full-stack web application made for educational use, ensuring secure and streamlined management of question papers. It features dedicated interfaces for **Admins**, **Teachers**, and **Students**, with suitable features for each user role. Security is prioritized using **Counter Mode (CTR) Encryption**, **OTP-based downloads**, and **dynamic watermarking**.
+**QUARK** (Question Upload and Access Repository Kit) is a robust, full-stack web application made for ensuring secure and streamlined management of question papers. It features dedicated interfaces for **Admins**, **Teachers**, and **Students**, with suitable features for each user role. Security is prioritized using **Counter Mode (CTR) Encryption**, **OTP-based downloads**, and **dynamic watermarking**.
 
 ---
 
